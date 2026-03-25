@@ -1,0 +1,21 @@
+# Flutter / Dart
+.dart_tool/**
+build/**
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# logs
+*.log
+
+# lock (선택)
+pubspec.lock
