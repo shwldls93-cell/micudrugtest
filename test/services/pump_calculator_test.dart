@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:micudrugtest/data/default_presets.dart';
 import 'package:micudrugtest/models/drug_preset.dart';
 import 'package:micudrugtest/services/pump_calculator.dart';
+import 'package:micudrugtest/utils/pump_calculator_text.dart';
 
 void main() {
   group('pump calculator', () {
@@ -198,6 +199,17 @@ void main() {
       final normalized = normalizeDoseUnitLabel(' mcg / kg / min ', 'hr');
 
       expect(normalized, 'mcg/kg/hr');
+    });
+
+    test('simplifies selected preset labels', () {
+      expect(
+        selectedPresetLabel('precedex(dexmedetomidine)'),
+        'precedex',
+      );
+      expect(
+        selectedPresetLabel('norepinephrine (central)'),
+        'norepinephrine',
+      );
     });
   });
 }

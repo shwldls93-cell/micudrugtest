@@ -113,7 +113,7 @@ class CalculatorSection extends StatelessWidget {
                         selectedItemBuilder: (context) => presets
                             .map(
                               (preset) => _PresetDropdownLabel(
-                                text: presetDropdownLabel(preset.name),
+                                text: selectedPresetLabel(preset.name),
                                 scaleToFit: true,
                               ),
                             )
