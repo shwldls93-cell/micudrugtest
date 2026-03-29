@@ -82216,7 +82216,7 @@ $0(){var s,r,q=this,p=q.a
 p.dy=A.aLm(q.b,q.c)
 s=q.d
 r=s!=null
-p.fr=r?s+" \uc8fc\uc785\uc6a9\ub7c9\ud655\uc778":"\uacc4\uc0b0\ub41c \uc8fc\uc785\uc18d\ub3c4\ub97c infusion pump\uc5d0 \uc785\ub825\ud574 \uc8fc\uc138\uc694."
+p.fr=r?s+" \uc8fc\uc785\uc6a9\ub7c9\ud655\uc778":""
 p.fy=p.fx=r},
 $S:0}
 A.aio.prototype={
