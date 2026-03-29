@@ -1,0 +1,72 @@
+String normalizeSearchText(String value) {
+  return value.toLowerCase().replaceAll(RegExp(r'[\s()/_-]+'), '');
+}
+
+String presetDropdownLabel(String presetName) {
+  final withoutDose = presetName.replaceAll(
+    RegExp(
+      r'\s+\d+(?:\.\d+)?\s*(?:mg|mcg|iu)(?=\s*\(|$)',
+      caseSensitive: false,
+    ),
+    '',
+  );
+  return withoutDose.replaceAllMapped(
+    RegExp(r'([A-Za-z가-힣])\('),
+    (match) => '${match.group(1)} (',
+  );
+}
+
+String mixDrugLabel(String drugName) {
+  final trimmed = drugName.trim();
+
+  if (RegExp(r'^[A-Za-z가-힣]+\([^()]+\)$').hasMatch(trimmed)) {
+    return trimmed.substring(0, trimmed.indexOf('(')).trim();
+  }
+
+  return presetDropdownLabel(trimmed).trim();
+}
+
+String extractMixLine(String note, String drugName) {
+  if (note.trim().isEmpty) return '-';
+  final lines = note.split('\n');
+
+  String attachDrugName(String mixBody) {
+    final normalizedDrugName = mixDrugLabel(drugName);
+    final normalizedMixBody = mixBody.trim();
+
+    if (normalizedDrugName.isEmpty || normalizedMixBody.isEmpty) {
+      return normalizedMixBody;
+    }
+
+    if (normalizedMixBody.toLowerCase().startsWith(
+          normalizedDrugName.toLowerCase(),
+        )) {
+      return normalizedMixBody;
+    }
+
+    return '$normalizedDrugName $normalizedMixBody';
+  }
+
+  for (final line in lines) {
+    if (line.toLowerCase().contains('mix')) {
+      final mixBody =
+          line.replaceFirst(RegExp(r'^mix\s*', caseSensitive: false), '');
+      return attachDrugName(mixBody);
+    }
+  }
+  return attachDrugName(lines.first);
+}
+
+String extractAdditionalNote(String note) {
+  if (note.trim().isEmpty) return '';
+
+  final extraLines = note
+      .split('\n')
+      .map((line) => line.trim())
+      .where((line) => line.isNotEmpty)
+      .where((line) => !line.toLowerCase().startsWith('mix'))
+      .where((line) => !RegExp(r'^min\s', caseSensitive: false).hasMatch(line))
+      .toList();
+
+  return extraLines.join('\n');
+}
