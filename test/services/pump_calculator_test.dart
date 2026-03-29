@@ -111,6 +111,69 @@ void main() {
       expect(migrated.single.doseUnit, 'mcg/kg/hr');
     });
 
+    test('uses the updated EICU2 preset list', () {
+      final presets = defaultEicu2Presets();
+      final precedex =
+          presets.firstWhere((preset) => preset.name == 'precedex');
+
+      expect(presets, hasLength(24));
+      expect(precedex.doseUnit, 'mcg/kg/hr');
+      expect(precedex.maxDose, 1.5);
+      expect(
+        presets.any((preset) => preset.name == 'norepinephrine (central)'),
+        isTrue,
+      );
+      expect(
+        presets.any((preset) => preset.name == 'Labesin'),
+        isTrue,
+      );
+    });
+
+    test('replaces legacy EICU2 presets with the updated preset list', () {
+      final migrated = replaceLegacyEicu2Presets([
+        DrugPreset(
+          id: 'legacy-adrenaline',
+          name: 'Adrenaline',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 4,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'min',
+          useWeight: true,
+          note: '',
+        ),
+        DrugPreset(
+          id: 'legacy-amiodarone',
+          name: 'Amiodarone',
+          doseUnit: 'mg/hr',
+          drugAmount: 150,
+          drugUnit: 'mg',
+          volumeMl: 100,
+          timeUnit: 'hr',
+          useWeight: false,
+          note: '',
+        ),
+        DrugPreset(
+          id: 'legacy-dopamine',
+          name: 'Dopamine',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 200,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'min',
+          useWeight: true,
+          note: '',
+        ),
+      ]);
+
+      expect(migrated, hasLength(24));
+      expect(migrated.any((preset) => preset.name == 'Adrenaline'), isFalse);
+      expect(
+        migrated.any((preset) => preset.name == 'norepinephrine (central)'),
+        isTrue,
+      );
+    });
+
     test('warns when the dose exceeds the preset maximum', () {
       final preset = DrugPreset(
         id: 'range',

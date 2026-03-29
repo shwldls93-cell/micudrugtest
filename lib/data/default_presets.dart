@@ -114,6 +114,20 @@ DrugPreset buildDrugPreset({
   );
 }
 
+String buildPresetNote({
+  required String mix,
+  String? initial,
+  String? max,
+  String? extra,
+}) {
+  return [
+    mix,
+    if (initial != null && initial.trim().isNotEmpty) 'Initial $initial',
+    if (max != null && max.trim().isNotEmpty) 'Max $max',
+    if (extra != null && extra.trim().isNotEmpty) extra.trim(),
+  ].join('\n');
+}
+
 bool _isLegacyNcuMgso4Name(String name) {
   final normalized = name.trim().toLowerCase();
   return normalized == 'mgso4 (sah)' || normalized == 'mgso4 (ttm)';
@@ -136,7 +150,8 @@ DrugPreset buildNcuMgso4Preset() {
 bool shouldReplaceLegacyNcuMgso4Presets(List<DrugPreset> presets) {
   if (presets.isEmpty) return false;
 
-  final names = presets.map((preset) => preset.name.trim().toLowerCase()).toSet();
+  final names =
+      presets.map((preset) => preset.name.trim().toLowerCase()).toSet();
   final hasLegacyEntry = names.any(_isLegacyNcuMgso4Name);
   final hasCurrentEntry = names.contains('mgso4');
 
@@ -162,6 +177,407 @@ List<DrugPreset> replaceLegacyNcuMgso4Presets(List<DrugPreset> presets) {
   }
 
   return ensureUniquePresetIds(nextList);
+}
+
+bool shouldReplaceLegacyEicu2Presets(List<DrugPreset> presets) {
+  if (presets.isEmpty) return false;
+
+  final names =
+      presets.map((preset) => preset.name.trim().toLowerCase()).toSet();
+  const legacyNames = {'adrenaline', 'dopamine'};
+  const currentMarkers = {
+    'norepinephrine (central)',
+    'vasopressin',
+    'heparin',
+  };
+
+  return names.any(legacyNames.contains) && !names.any(currentMarkers.contains);
+}
+
+List<DrugPreset> replaceLegacyEicu2Presets(List<DrugPreset> presets) {
+  return defaultEicu2Presets();
+}
+
+List<DrugPreset> defaultEicu2Presets() {
+  final presets = [
+    buildDrugPreset(
+      name: 'norepinephrine (central)',
+      doseUnit: 'mcg/min',
+      drugAmount: 12,
+      drugUnit: 'mg',
+      volumeMl: 200,
+      timeUnit: 'min',
+      useWeight: false,
+      minDose: 2,
+      maxDose: 64,
+      note: buildPresetNote(
+        mix: 'Mix 12 mg + 5DW 200 mL',
+        initial: '2 mcg/min',
+        max: '64 mcg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'norepinephrine (pph)',
+      doseUnit: 'mcg/min',
+      drugAmount: 6,
+      drugUnit: 'mg',
+      volumeMl: 200,
+      timeUnit: 'min',
+      useWeight: false,
+      minDose: 2,
+      maxDose: 64,
+      note: buildPresetNote(
+        mix: 'Mix 6 mg + 5DW 200 mL',
+        initial: '2 mcg/min',
+        max: '64 mcg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'vasopressin',
+      doseUnit: 'iu/min',
+      drugAmount: 40,
+      drugUnit: 'iu',
+      volumeMl: 100,
+      timeUnit: 'min',
+      useWeight: false,
+      minDose: 0.02,
+      maxDose: 0.1,
+      note: buildPresetNote(
+        mix: 'Mix 40 IU + 5DW 100 mL',
+        initial: '0.02 IU/min',
+        max: '0.1 IU/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'amiodarone',
+      doseUnit: 'mg/min',
+      drugAmount: 900,
+      drugUnit: 'mg',
+      volumeMl: 500,
+      timeUnit: 'min',
+      useWeight: false,
+      note: buildPresetNote(
+        mix: 'Mix 900 mg + 5DW 500 mL',
+        initial: '1 mg/min 6 hrs',
+        max: '0.5 mg/min 18 hrs',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'precedex',
+      doseUnit: 'mcg/kg/hr',
+      drugAmount: 400,
+      drugUnit: 'mcg',
+      volumeMl: 100,
+      timeUnit: 'hr',
+      useWeight: true,
+      minDose: 0.2,
+      maxDose: 1.5,
+      note: buildPresetNote(
+        mix: 'Premix 100 mL',
+        initial: '0.2 mcg/kg/hr',
+        max: '1.5 mcg/kg/hr',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'remifentanil',
+      doseUnit: 'mcg/kg/min',
+      drugAmount: 2,
+      drugUnit: 'mg',
+      volumeMl: 40,
+      timeUnit: 'min',
+      useWeight: true,
+      minDose: 0.01,
+      maxDose: 0.25,
+      note: buildPresetNote(
+        mix: 'Mix 2 mg + 5DW/NS 40 mL',
+        initial: '0.01 mcg/kg/min',
+        max: '0.25 mcg/kg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'heparin',
+      doseUnit: 'iu/kg/hr',
+      drugAmount: 25000,
+      drugUnit: 'iu',
+      volumeMl: 500,
+      timeUnit: 'hr',
+      useWeight: true,
+      minDose: 12,
+      note: buildPresetNote(
+        mix: 'Mix 25000 IU + 5DW/NS 500 mL',
+        initial: '12 IU/kg/hr',
+        max: '1000 IU/hr (case by case)',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'pantoprazole',
+      doseUnit: 'mg/hr',
+      drugAmount: 80,
+      drugUnit: 'mg',
+      volumeMl: 80,
+      timeUnit: 'hr',
+      useWeight: false,
+      minDose: 8,
+      note: buildPresetNote(
+        mix: 'Mix 80 mg + 5DW/NS 80 mL',
+        initial: '8 mg/hr 72 hrs',
+        max: '환자 상태에 따라 다름',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'nicardipine',
+      doseUnit: 'mg/hr',
+      drugAmount: 50,
+      drugUnit: 'mg',
+      volumeMl: 250,
+      timeUnit: 'hr',
+      useWeight: false,
+      minDose: 1.5,
+      maxDose: 18,
+      note: buildPresetNote(
+        mix: 'Mix 50 mg + 5DW/NS 250 mL',
+        initial: '1.5 mg/hr',
+        max: '18 mg/hr',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'nitroglycerin',
+      doseUnit: 'mcg/min',
+      drugAmount: 50,
+      drugUnit: 'mg',
+      volumeMl: 250,
+      timeUnit: 'min',
+      useWeight: false,
+      minDose: 10,
+      maxDose: 240,
+      note: buildPresetNote(
+        mix: 'Mix 50 mg + 5DW 250 mL',
+        initial: '10 mcg/min',
+        max: '240 mcg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'lidocaine',
+      doseUnit: 'mg/min',
+      drugAmount: 1600,
+      drugUnit: 'mg',
+      volumeMl: 200,
+      timeUnit: 'min',
+      useWeight: false,
+      minDose: 1,
+      maxDose: 4,
+      note: buildPresetNote(
+        mix: 'Mix 1600 mg + 5DW 200 mL',
+        initial: '1 mg/min',
+        max: '4 mg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'hydrocortisone',
+      doseUnit: 'mg/day',
+      drugAmount: 200,
+      drugUnit: 'mg',
+      volumeMl: 200,
+      timeUnit: 'day',
+      useWeight: false,
+      note: buildPresetNote(
+        mix: 'Mix 200 mg + 5DW 200 mL',
+        initial: '200 mg/day 72 hrs',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'epinephrine',
+      doseUnit: 'mcg/kg/min',
+      drugAmount: 2,
+      drugUnit: 'mg',
+      volumeMl: 100,
+      timeUnit: 'min',
+      useWeight: true,
+      minDose: 0.02,
+      maxDose: 0.7,
+      note: buildPresetNote(
+        mix: 'Mix 2 mg + 5DW 100 mL',
+        initial: '0.02 mcg/kg/min',
+        max: '0.7 mcg/kg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'midazolam',
+      doseUnit: 'mg/kg/hr',
+      drugAmount: 45,
+      drugUnit: 'mg',
+      volumeMl: 45,
+      timeUnit: 'hr',
+      useWeight: true,
+      minDose: 0.2,
+      note: buildPresetNote(
+        mix: 'Mix 45 mg + 5DW/NS 45 mL',
+        initial: '0.2 mg/kg/hr',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'propofol',
+      doseUnit: 'mg/kg/hr',
+      drugAmount: 400,
+      drugUnit: 'mg',
+      volumeMl: 40,
+      timeUnit: 'hr',
+      useWeight: true,
+      minDose: 0.3,
+      maxDose: 4,
+      note: buildPresetNote(
+        mix: '원액 40 mL',
+        initial: '0.3 mg/kg/hr',
+        max: '4 mg/kg/hr',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'esmolol',
+      doseUnit: 'mcg/kg/min',
+      drugAmount: 2500,
+      drugUnit: 'mg',
+      volumeMl: 250,
+      timeUnit: 'min',
+      useWeight: true,
+      minDose: 25,
+      maxDose: 200,
+      note: buildPresetNote(
+        mix: 'Mix 2500 mg + 5DW/NS 250 mL',
+        initial: '25 mcg/kg/min',
+        max: '200 mcg/kg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'diltiazem',
+      doseUnit: 'mg/hr',
+      drugAmount: 100,
+      drugUnit: 'mg',
+      volumeMl: 100,
+      timeUnit: 'hr',
+      useWeight: false,
+      minDose: 5,
+      maxDose: 50,
+      note: buildPresetNote(
+        mix: 'Mix 100 mg + 5DW 100 mL',
+        initial: '5 mg/hr',
+        max: '50 mg/hr',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'Eglandin (lipo-PGE1)',
+      doseUnit: 'mcg/hr',
+      drugAmount: 100,
+      drugUnit: 'mcg',
+      volumeMl: 200,
+      timeUnit: 'hr',
+      useWeight: false,
+      minDose: 10,
+      maxDose: 30,
+      note: buildPresetNote(
+        mix: 'Mix 100 mcg + NS 200 mL',
+        initial: '10 mcg/hr',
+        max: '30 mcg/hr',
+        extra: '총 약물량은 100 mcg 기준, 필요 시 200 mcg로 조정',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'Tirofiban',
+      doseUnit: 'mcg/kg/min',
+      drugAmount: 12.5,
+      drugUnit: 'mg',
+      volumeMl: 250,
+      timeUnit: 'min',
+      useWeight: true,
+      note: buildPresetNote(
+        mix: 'Mix 12.5 mg/50 mL + 5DW/NS 200 mL (total 250 mL)',
+        initial: '0.4 mcg/kg/min for 30 min',
+        max: '0.1 mcg/kg/min for 12-24 hrs',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'Phenylephrine',
+      doseUnit: 'mcg/kg/min',
+      drugAmount: 10,
+      drugUnit: 'mg',
+      volumeMl: 100,
+      timeUnit: 'min',
+      useWeight: true,
+      minDose: 0.05,
+      maxDose: 1.5,
+      note: buildPresetNote(
+        mix: 'Mix 10 mg + NS/5DW 100 mL',
+        initial: '0.05 mcg/kg/min',
+        max: '1.5 mcg/kg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'PGE1 (Alprostadil)',
+      doseUnit: 'mcg/kg/min',
+      drugAmount: 500,
+      drugUnit: 'mcg',
+      volumeMl: 250,
+      timeUnit: 'min',
+      useWeight: true,
+      minDose: 0.01,
+      maxDose: 0.04,
+      note: buildPresetNote(
+        mix: 'Mix 500 mcg + NS 250 mL',
+        initial: '0.01 mcg/kg/min',
+        max: '0.04 mcg/kg/min',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'Fentanyl',
+      doseUnit: 'mcg/kg/hr',
+      drugAmount: 4000,
+      drugUnit: 'mcg',
+      volumeMl: 100,
+      timeUnit: 'hr',
+      useWeight: true,
+      minDose: 1,
+      maxDose: 10,
+      note: buildPresetNote(
+        mix: 'Mix 4000 mcg + NS/5DW 100 mL',
+        initial: '1 mcg/kg/hr',
+        max: '10 mcg/kg/hr',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'Vecuronium',
+      doseUnit: 'mg/hr',
+      drugAmount: 50,
+      drugUnit: 'mg',
+      volumeMl: 50,
+      timeUnit: 'hr',
+      useWeight: false,
+      minDose: 1,
+      maxDose: 5,
+      note: buildPresetNote(
+        mix: 'Mix 50 mg + 5DW/NS 50 mL',
+        initial: '1 mg/hr',
+        max: '5 mg/hr',
+        extra: '요청값의 time min / weight yes 조합은 계산식과 충돌해 hr / no weight로 반영',
+      ),
+    ),
+    buildDrugPreset(
+      name: 'Labesin',
+      doseUnit: 'mg/hr',
+      drugAmount: 100,
+      drugUnit: 'mg',
+      volumeMl: 100,
+      timeUnit: 'hr',
+      useWeight: false,
+      minDose: 2,
+      maxDose: 20,
+      note: buildPresetNote(
+        mix: 'Mix 100 mg + 5DW/NS 100 mL',
+        initial: '2 mg/hr',
+        max: '20 mg/hr',
+      ),
+    ),
+  ];
+
+  return ensureUniquePresetIds(presets);
 }
 
 List<DrugPreset> defaultMicuPresets() {
@@ -790,47 +1206,7 @@ final List<DepartmentPreset> defaultDepartments = [
     label: 'EICU2',
     icon: '⚡',
     description: '응급 중환자실2',
-    presets: [
-      DrugPreset(
-        id: uniqueId(),
-        name: 'Adrenaline',
-        doseUnit: 'mcg/kg/min',
-        minDose: 0.01,
-        maxDose: 0.5,
-        drugAmount: 4,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'min',
-        useWeight: true,
-        note: 'Mix 4 mg + D5W 50 mL\n부정맥 및 말초허혈 주의',
-      ),
-      DrugPreset(
-        id: uniqueId(),
-        name: 'Amiodarone',
-        doseUnit: 'mg/hr',
-        minDose: 0.5,
-        maxDose: 1,
-        drugAmount: 150,
-        drugUnit: 'mg',
-        volumeMl: 100,
-        timeUnit: 'hr',
-        useWeight: false,
-        note: 'Loading dose 후 유지주입으로 전환\nQT prolongation 확인',
-      ),
-      DrugPreset(
-        id: uniqueId(),
-        name: 'Dopamine',
-        doseUnit: 'mcg/kg/min',
-        minDose: 2,
-        maxDose: 20,
-        drugAmount: 200,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'min',
-        useWeight: true,
-        note: 'Mix 200 mg + NS 50 mL\n빈맥과 혈압 반응 모니터링',
-      ),
-    ],
+    presets: defaultEicu2Presets(),
   ),
   DepartmentPreset(
     id: 'ncu',

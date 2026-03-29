@@ -158,6 +158,10 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
               preset_data.shouldReplaceLegacyMicuPresets(savedList)) {
             savedList = <DrugPreset>[];
           }
+          if (department.id == 'eicu2' &&
+              preset_data.shouldReplaceLegacyEicu2Presets(savedList)) {
+            savedList = preset_data.replaceLegacyEicu2Presets(savedList);
+          }
           if (department.id == 'ncu' &&
               preset_data.shouldReplaceLegacyNcuMgso4Presets(savedList)) {
             savedList = preset_data.replaceLegacyNcuMgso4Presets(savedList);
