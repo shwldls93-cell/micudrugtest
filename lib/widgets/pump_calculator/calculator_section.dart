@@ -262,22 +262,27 @@ class _PresetDropdownLabel extends StatelessWidget {
     required this.text,
     this.detail,
     this.scaleToFit = false,
+    this.fontSize,
+    this.detailFontSize,
   });
 
   final String text;
   final String? detail;
   final bool scaleToFit;
+  final double? fontSize;
+  final double? detailFontSize;
 
   @override
   Widget build(BuildContext context) {
     final helperText = detail?.trim();
+    final resolvedFontSize = scaleToFit ? 17.0 : (fontSize ?? 15.0);
     final label = Text(
       text,
       maxLines: 1,
       overflow: scaleToFit ? TextOverflow.visible : TextOverflow.ellipsis,
       softWrap: false,
       style: TextStyle(
-        fontSize: scaleToFit ? 17.0 : 15.0,
+        fontSize: resolvedFontSize,
         fontWeight: scaleToFit ? FontWeight.w900 : FontWeight.w800,
         height: 1.0,
       ),
@@ -295,10 +300,10 @@ class _PresetDropdownLabel extends StatelessWidget {
                 helperText,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12.5,
+                style: TextStyle(
+                  fontSize: detailFontSize ?? 12.5,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF667085),
+                  color: const Color(0xFF667085),
                 ),
               ),
             ),
@@ -416,15 +421,11 @@ class _PresetSearchResultTile extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  preset.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF163647),
-                  ),
+                child: _PresetDropdownLabel(
+                  text: selectedPresetLabel(preset.name),
+                  detail: selectedPresetDetail(preset.name),
+                  fontSize: 14,
+                  detailFontSize: 11.5,
                 ),
               ),
               if (selected)
@@ -474,7 +475,7 @@ class _NoteBoard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoLine(label: '혼합', value: mixLine, maxLines: 2),
+          _InfoLine(label: '혼합', value: mixLine),
           const SizedBox(height: 14),
           _InfoLine(label: '범위', value: rangeText),
           const SizedBox(height: 14),
@@ -486,8 +487,8 @@ class _NoteBoard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 14,
-                height: 1.2,
+                fontSize: 13,
+                height: 1.1,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF475467),
               ),
@@ -500,7 +501,7 @@ class _NoteBoard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w800,
                 color: resultError
                     ? const Color(0xFFC12828)
@@ -518,12 +519,10 @@ class _InfoLine extends StatelessWidget {
   const _InfoLine({
     required this.label,
     required this.value,
-    this.maxLines = 1,
   });
 
   final String label;
   final String value;
-  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -531,25 +530,25 @@ class _InfoLine extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 50,
+          width: 46,
           child: Text(
             label,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w900,
               color: Color(0xFF101828),
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
           child: Text(
             value,
-            maxLines: maxLines,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 12,
-              height: 1.1,
+              fontSize: 11.5,
+              height: 1.0,
               fontWeight: FontWeight.w700,
               color: Color(0xFF667085),
             ),
