@@ -358,7 +358,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
         _resultValue = formatCalculatedRate(roundedRate, preset);
         _resultDetail = rangeWarning != null
             ? '$rangeWarning 주입용량확인'
-            : '계산된 주입속도를 infusion pump에 입력해 주세요.';
+            : '';
         _resultError = rangeWarning != null;
         _resultDoseWarning = rangeWarning != null;
       });
