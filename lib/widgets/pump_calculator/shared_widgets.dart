@@ -179,7 +179,7 @@ class CalculatorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FBFD),
         borderRadius: BorderRadius.circular(24),
@@ -194,7 +194,7 @@ class CalculatorRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(child: child),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               suffix,
             ],
           ),
@@ -290,7 +290,7 @@ class RateSuffix extends StatelessWidget {
                 '주입용량확인',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFFC12828),
                 ),
@@ -378,7 +378,7 @@ InputDecoration rowDecoration({String? hint}) {
     hintText: hint,
     filled: true,
     fillColor: const Color(0xFFFFFFFF),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
     border: roundedInputBorder(),
     enabledBorder: roundedInputBorder(),
     focusedBorder: roundedInputBorder(color: const Color(0xFF8FD5F7)),

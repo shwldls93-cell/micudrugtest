@@ -1,3 +1,3 @@
-const calculatorMaxWidth = 560.0;
-const calculatorSuffixWidth = 108.0;
-const calculatorUnitFontSize = 18.0;
+const calculatorMaxWidth = 660.0;
+const calculatorSuffixWidth = 86.0;
+const calculatorUnitFontSize = 15.0;
