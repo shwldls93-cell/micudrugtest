@@ -168,13 +168,13 @@ class CalculatorRow extends StatelessWidget {
   const CalculatorRow({
     required this.label,
     required this.child,
-    required this.suffix,
+    this.suffix,
     super.key,
   });
 
   final String label;
   final Widget child;
-  final Widget suffix;
+  final Widget? suffix;
 
   @override
   Widget build(BuildContext context) {
@@ -194,8 +194,10 @@ class CalculatorRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(child: child),
-              const SizedBox(width: 6),
-              suffix,
+              if (suffix != null) ...[
+                const SizedBox(width: 6),
+                suffix!,
+              ],
             ],
           ),
         ],

@@ -21,6 +21,18 @@ String selectedPresetLabel(String presetName) {
   return normalized.replaceFirst(RegExp(r'\s*\([^()]+\)\s*$'), '').trim();
 }
 
+String? selectedPresetDetail(String presetName) {
+  final normalized = presetDropdownLabel(presetName).trim();
+  final match = RegExp(r'\(([^()]+)\)\s*$').firstMatch(normalized);
+  final detail = match?.group(1)?.trim();
+
+  if (detail == null || detail.isEmpty) {
+    return null;
+  }
+
+  return detail;
+}
+
 String mixDrugLabel(String drugName) {
   final trimmed = drugName.trim();
 

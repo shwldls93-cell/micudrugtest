@@ -211,5 +211,17 @@ void main() {
         'norepinephrine',
       );
     });
+
+    test('extracts preset helper details for the dropdown list', () {
+      expect(
+        selectedPresetDetail('precedex(dexmedetomidine)'),
+        'dexmedetomidine',
+      );
+      expect(
+        selectedPresetDetail('norepinephrine (central)'),
+        'central',
+      );
+      expect(selectedPresetDetail('propofol'), isNull);
+    });
   });
 }

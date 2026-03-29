@@ -98,14 +98,19 @@ class CalculatorSection extends StatelessWidget {
                         key: ValueKey(selectedPresetId),
                         initialValue: selectedPresetId,
                         isExpanded: true,
-                        icon: const SizedBox.shrink(),
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 28,
+                          color: Color(0xFF0F6784),
+                        ),
                         decoration: rowDecoration(),
                         items: presets
                             .map(
                               (preset) => DropdownMenuItem(
                                 value: preset.id,
                                 child: _PresetDropdownLabel(
-                                  text: presetDropdownLabel(preset.name),
+                                  text: selectedPresetLabel(preset.name),
+                                  detail: selectedPresetDetail(preset.name),
                                 ),
                               ),
                             )
@@ -119,13 +124,6 @@ class CalculatorSection extends StatelessWidget {
                             )
                             .toList(),
                         onChanged: onPresetChanged,
-                      ),
-                      suffix: const CalculatorSuffixSlot(
-                        child: Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 28,
-                          color: Color(0xFF0F6784),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -262,14 +260,17 @@ class CalculatorSection extends StatelessWidget {
 class _PresetDropdownLabel extends StatelessWidget {
   const _PresetDropdownLabel({
     required this.text,
+    this.detail,
     this.scaleToFit = false,
   });
 
   final String text;
+  final String? detail;
   final bool scaleToFit;
 
   @override
   Widget build(BuildContext context) {
+    final helperText = detail?.trim();
     final label = Text(
       text,
       maxLines: 1,
@@ -281,6 +282,30 @@ class _PresetDropdownLabel extends StatelessWidget {
         height: 1.0,
       ),
     );
+
+    if (!scaleToFit && helperText != null && helperText.isNotEmpty) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            Flexible(child: label),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                helperText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF667085),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Align(
       alignment: Alignment.centerLeft,
