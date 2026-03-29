@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -13,6 +11,9 @@ const legacyStorageKeys = [
 const legacySelectedDepartmentKeys = [
   'icu_selected_department_v1',
 ];
+const calculatorMaxWidth = 460.0;
+const calculatorSuffixWidth = 128.0;
+const calculatorUnitFontSize = 18.0;
 
 void main() {
   runApp(const JjonddeukCalculatorApp());
@@ -34,7 +35,6 @@ class JjonddeukCalculatorApp extends StatelessWidget {
           primary: const Color(0xFF0F6784),
           secondary: const Color(0xFFFFD9E4),
           surface: const Color(0xFFFFFFFF),
-          background: const Color(0xFFF7F9FB),
         ),
         fontFamily: 'Pretendard',
       ),
@@ -53,6 +53,7 @@ class PumpCalculatorPage extends StatefulWidget {
 class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   final _doseController = TextEditingController();
   final _weightController = TextEditingController();
+  final _presetSearchController = TextEditingController();
 
   final _nameController = TextEditingController();
   final _doseUnitController = TextEditingController();
@@ -67,7 +68,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   final _editorFormKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   final _landingSectionKey = GlobalKey();
-  final _calculatorSectionKey = GlobalKey();
   final _editorSectionKey = GlobalKey();
 
   late Map<String, List<DrugPreset>> _presetsByDepartment;
@@ -81,6 +81,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   bool _isLoading = true;
   String _selectedTimeUnit = 'min';
   String _activeBottomTab = 'home';
+  String _presetSearchQuery = '';
 
   @override
   void initState() {
@@ -93,6 +94,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   void dispose() {
     _doseController.dispose();
     _weightController.dispose();
+    _presetSearchController.dispose();
     _nameController.dispose();
     _doseUnitController.dispose();
     _minDoseController.dispose();
@@ -105,17 +107,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     super.dispose();
   }
 
-  Future<void> _scrollToSection(GlobalKey sectionKey) async {
-    final context = sectionKey.currentContext;
-    if (context == null) return;
-    await Scrollable.ensureVisible(
-      context,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeOutCubic,
-      alignment: 0.02,
-    );
-  }
-
   void _handleBottomNavTap(String tab) {
     setState(() => _activeBottomTab = tab);
 
@@ -126,13 +117,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOutCubic,
         );
-        break;
-      case 'presets':
-        if (_selectedDepartmentId == null) {
-          _showSnackBar('먼저 부서를 선택해 주세요.');
-          return;
-        }
-        _scrollToSection(_editorSectionKey);
         break;
       default:
         break;
@@ -228,37 +212,77 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     return _currentPresets.isNotEmpty ? _currentPresets.first : null;
   }
 
+  List<DrugPreset> get _presetSearchResults {
+    final normalizedQuery = normalizeSearchText(_presetSearchQuery);
+    if (normalizedQuery.isEmpty) return const [];
+
+    final prefixMatches = <DrugPreset>[];
+    final containsMatches = <DrugPreset>[];
+
+    for (final preset in _currentPresets) {
+      final searchTerms = <String>[
+        normalizeSearchText(preset.name),
+        normalizeSearchText(presetDropdownLabel(preset.name)),
+        normalizeSearchText(mixDrugLabel(preset.name)),
+      ];
+
+      if (searchTerms.any((term) => term.startsWith(normalizedQuery))) {
+        prefixMatches.add(preset);
+      } else if (searchTerms.any((term) => term.contains(normalizedQuery))) {
+        containsMatches.add(preset);
+      }
+    }
+
+    return [...prefixMatches, ...containsMatches];
+  }
+
+  void _applyDefaultResult([String? detail]) {
+    _resultValue = '--';
+    _resultDetail = detail ?? '약물과 값을 입력하면 계산식이 표시됩니다.';
+    _resultError = false;
+    _resultDoseWarning = false;
+  }
+
   void _resetResult([String? detail]) {
     setState(() {
-      _resultValue = '--';
-      _resultDetail = detail ?? '약물과 값을 입력하면 계산식이 표시됩니다.';
-      _resultError = false;
-      _resultDoseWarning = false;
+      _applyDefaultResult(detail);
     });
+  }
+
+  void _clearPresetSearchState() {
+    _presetSearchQuery = '';
+  }
+
+  void _clearPresetSearchField() {
+    if (_presetSearchController.text.isNotEmpty) {
+      _presetSearchController.clear();
+    }
   }
 
   void _selectDepartment(String departmentId) {
     setState(() {
       _selectedDepartmentId = departmentId;
       _selectedPresetId = _presetsByDepartment[departmentId]?.firstOrNull?.id;
+      _clearPresetSearchState();
       _doseController.clear();
       _weightController.clear();
       _syncEditorWithSelectedPreset();
-      _resetResult();
-      _activeBottomTab = 'home';
+      _applyDefaultResult();
     });
+    _clearPresetSearchField();
     _saveState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToSection(_calculatorSectionKey);
-    });
   }
 
   void _changeSelectedPreset(String? presetId) {
     setState(() {
       _selectedPresetId = presetId;
+      _clearPresetSearchState();
       _syncEditorWithSelectedPreset();
-      _resetResult();
+      _applyDefaultResult();
     });
+    _clearPresetSearchField();
+    FocusManager.instance.primaryFocus?.unfocus();
+    _autoCalculate();
   }
 
   void _syncEditorWithSelectedPreset() {
@@ -323,6 +347,42 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
         _resultError = true;
         _resultDoseWarning = false;
       });
+      return;
+    }
+
+    final rangeWarning = validateDoseRange(dose, preset);
+
+    final rate = calculateRate(
+      dose: dose,
+      weight: weight ?? 0,
+      preset: preset,
+    );
+    final roundedRate = roundCalculatedRate(rate, preset);
+
+    setState(() {
+      _resultValue = formatCalculatedRate(roundedRate, preset);
+      _resultDetail = rangeWarning != null
+          ? '$rangeWarning 주입용량확인'
+          : '계산된 주입속도를 infusion pump에 입력해 주세요.';
+      _resultError = rangeWarning != null;
+      _resultDoseWarning = rangeWarning != null;
+    });
+  }
+
+  void _autoCalculate() {
+    final preset = _selectedPreset;
+    if (preset == null) {
+      _resetResult();
+      return;
+    }
+
+    final dose = double.tryParse(_doseController.text.trim());
+    final weight = double.tryParse(_weightController.text.trim());
+
+    if (dose == null ||
+        dose <= 0 ||
+        (preset.useWeight && (weight == null || weight <= 0))) {
+      _resetResult();
       return;
     }
 
@@ -422,7 +482,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       _presetsByDepartment[departmentId] = nextList;
       _selectedPresetId = nextList.first.id;
       _syncEditorWithSelectedPreset();
-      _resetResult('${_currentDepartment?.label ?? ''} 부서 약물 목록을 업데이트했습니다.');
+      _applyDefaultResult(
+          '${_currentDepartment?.label ?? ''} 부서 약물 목록을 업데이트했습니다.');
     });
 
     await _saveState();
@@ -443,7 +504,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       _presetsByDepartment[departmentId] = resetList;
       _selectedPresetId = resetList.first.id;
       _syncEditorWithSelectedPreset();
-      _resetResult('${_currentDepartment?.label ?? ''} 부서 기본 약물 계산식으로 복원했습니다.');
+      _applyDefaultResult(
+          '${_currentDepartment?.label ?? ''} 부서 기본 약물 계산식으로 복원했습니다.');
     });
 
     await _saveState();
@@ -487,20 +549,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     }
 
     return Scaffold(
-      floatingActionButton: _selectedDepartmentId == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: _calculate,
-              backgroundColor: const Color(0xFF0F6784),
-              foregroundColor: Colors.white,
-              elevation: 4,
-              icon: const Icon(Icons.calculate_rounded),
-              label: const Text(
-                '계산',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: SoftBottomNav(
         selectedTab: _activeBottomTab,
         onTap: _handleBottomNavTap,
@@ -523,48 +571,61 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
             child: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
+                constraints: const BoxConstraints(maxWidth: calculatorMaxWidth),
                 child: Column(
                   children: [
-                    Container(
-                      key: _landingSectionKey,
-                      child: _LandingSection(
-                        selectedDepartmentLabel:
-                            _currentDepartment?.label ?? '선택 전',
-                        onSelectDepartment: _selectDepartment,
-                        selectedDepartmentId: _selectedDepartmentId,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    if (_selectedDepartmentId != null)
+                    if (_selectedDepartmentId == null)
                       Container(
-                        key: _calculatorSectionKey,
-                        child: _CalculatorSection(
-                          departmentLabel:
-                              _currentDepartment?.displayTitle ?? '-',
-                          presets: _currentPresets,
-                          selectedPresetId: _selectedPresetId,
-                          selectedPreset: _selectedPreset,
-                          doseController: _doseController,
-                          weightController: _weightController,
-                          resultValue: _resultValue,
-                          resultDetail: _resultDetail,
-                          resultError: _resultError,
-                          resultDoseWarning: _resultDoseWarning,
-                          calculatorFormKey: _calculatorFormKey,
-                          onCalculate: _calculate,
-                          onPresetChanged: _changeSelectedPreset,
-                          onChangeDepartment: () {
-                            setState(() {
-                              _selectedDepartmentId = null;
-                              _selectedPresetId = null;
-                              _resetResult();
-                            });
-                            _saveState();
-                          },
-                          onResetPresets: _resetDepartmentPresets,
-                          editor: _buildEditorCard(),
+                        key: _landingSectionKey,
+                        child: _LandingSection(
+                          selectedDepartmentLabel:
+                              _currentDepartment?.label ?? '선택 전',
+                          onSelectDepartment: _selectDepartment,
+                          selectedDepartmentId: _selectedDepartmentId,
                         ),
+                      )
+                    else
+                      _CalculatorSection(
+                        departmentLabel: _currentDepartment?.label ?? '-',
+                        presets: _currentPresets,
+                        selectedPresetId: _selectedPresetId,
+                        selectedPreset: _selectedPreset,
+                        doseController: _doseController,
+                        weightController: _weightController,
+                        resultValue: _resultValue,
+                        resultDetail: _resultDetail,
+                        resultError: _resultError,
+                        resultDoseWarning: _resultDoseWarning,
+                        calculatorFormKey: _calculatorFormKey,
+                        presetSearchController: _presetSearchController,
+                        presetSearchQuery: _presetSearchQuery,
+                        presetSearchResults: _presetSearchResults,
+                        onCalculate: _calculate,
+                        onPresetChanged: _changeSelectedPreset,
+                        onPresetSearchChanged: (value) {
+                          setState(() => _presetSearchQuery = value);
+                        },
+                        onPresetSearchSelected: (presetId) {
+                          _changeSelectedPreset(presetId);
+                        },
+                        onClearPresetSearch: () {
+                          setState(() => _clearPresetSearchState());
+                          _clearPresetSearchField();
+                        },
+                        onChangeDepartment: () {
+                          setState(() {
+                            _selectedDepartmentId = null;
+                            _selectedPresetId = null;
+                            _clearPresetSearchState();
+                            _applyDefaultResult();
+                          });
+                          _clearPresetSearchField();
+                          _saveState();
+                        },
+                        onResetPresets: _resetDepartmentPresets,
+                        editor: _buildEditorCard(),
+                        onDoseChanged: _autoCalculate,
+                        onWeightChanged: _autoCalculate,
                       ),
                   ],
                 ),
@@ -631,6 +692,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                     SizedBox(
                       width: 220,
                       child: DropdownButtonFormField<String>(
+                        key: ValueKey(_selectedTimeUnit),
                         initialValue: _selectedTimeUnit,
                         decoration: editorDecoration('시간 기준'),
                         items: const [
@@ -756,11 +818,19 @@ class _CalculatorSection extends StatelessWidget {
     required this.resultError,
     required this.resultDoseWarning,
     required this.calculatorFormKey,
+    required this.presetSearchController,
+    required this.presetSearchQuery,
+    required this.presetSearchResults,
     required this.onCalculate,
     required this.onPresetChanged,
+    required this.onPresetSearchChanged,
+    required this.onPresetSearchSelected,
+    required this.onClearPresetSearch,
     required this.onChangeDepartment,
     required this.onResetPresets,
     required this.editor,
+    required this.onDoseChanged,
+    required this.onWeightChanged,
   });
 
   final String departmentLabel;
@@ -774,11 +844,19 @@ class _CalculatorSection extends StatelessWidget {
   final bool resultError;
   final bool resultDoseWarning;
   final GlobalKey<FormState> calculatorFormKey;
+  final TextEditingController presetSearchController;
+  final String presetSearchQuery;
+  final List<DrugPreset> presetSearchResults;
   final VoidCallback onCalculate;
   final ValueChanged<String?> onPresetChanged;
+  final ValueChanged<String> onPresetSearchChanged;
+  final ValueChanged<String> onPresetSearchSelected;
+  final VoidCallback onClearPresetSearch;
   final VoidCallback onChangeDepartment;
   final VoidCallback onResetPresets;
   final Widget editor;
+  final VoidCallback onDoseChanged;
+  final VoidCallback onWeightChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -818,45 +896,70 @@ class _CalculatorSection extends StatelessWidget {
                     CalculatorRow(
                       label: '약물선택',
                       child: DropdownButtonFormField<String>(
+                        key: ValueKey(selectedPresetId),
                         initialValue: selectedPresetId,
+                        isExpanded: true,
+                        icon: const SizedBox.shrink(),
                         decoration: rowDecoration(),
                         items: presets
                             .map(
                               (preset) => DropdownMenuItem(
                                 value: preset.id,
-                                child: Text(
-                                  presetDropdownLabel(preset.name),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: false,
-                                  style: const TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700),
+                                child: _PresetDropdownLabel(
+                                  text: presetDropdownLabel(preset.name),
                                 ),
                               ),
                             )
                             .toList(),
                         selectedItemBuilder: (context) => presets
                             .map(
-                              (preset) => Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  presetDropdownLabel(preset.name),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: false,
-                                  style: const TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w700),
-                                ),
+                              (preset) => _PresetDropdownLabel(
+                                text: presetDropdownLabel(preset.name),
+                                scaleToFit: true,
                               ),
                             )
                             .toList(),
                         onChanged: onPresetChanged,
                       ),
-                      suffix: const Icon(Icons.keyboard_arrow_down_rounded,
-                          size: 28, color: Color(0xFF0F6784)),
+                      suffix: const CalculatorSuffixSlot(
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 28,
+                          color: Color(0xFF0F6784),
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: presetSearchController,
+                      textInputAction: TextInputAction.search,
+                      onChanged: onPresetSearchChanged,
+                      onSubmitted: (_) {
+                        if (presetSearchResults.isNotEmpty) {
+                          onPresetSearchSelected(presetSearchResults.first.id);
+                        }
+                      },
+                      decoration: rowDecoration(hint: '검색해서 바로 약물 찾기').copyWith(
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: Color(0xFF0F6784),
+                        ),
+                        suffixIcon: presetSearchQuery.trim().isEmpty
+                            ? null
+                            : IconButton(
+                                onPressed: onClearPresetSearch,
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                      ),
+                    ),
+                    if (presetSearchQuery.trim().isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      PresetSearchResults(
+                        results: presetSearchResults,
+                        selectedPresetId: selectedPresetId,
+                        onSelected: onPresetSearchSelected,
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     CalculatorRow(
                       label: '몸무게',
@@ -866,6 +969,7 @@ class _CalculatorSection extends StatelessWidget {
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         decoration: rowDecoration(hint: '몸무게 입력'),
+                        onChanged: (_) => onWeightChanged(),
                       ),
                       suffix: const UnitLabel('kg'),
                     ),
@@ -892,13 +996,13 @@ class _CalculatorSection extends StatelessWidget {
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         decoration: rowDecoration(hint: '용량 입력'),
+                        onChanged: (_) => onDoseChanged(),
                         validator: (value) =>
                             (value == null || value.trim().isEmpty)
                                 ? '용량 입력'
                                 : null,
                       ),
-                      suffix:
-                          UnitLabel(preset?.doseUnit ?? '약물단위', compact: true),
+                      suffix: UnitLabel(preset?.doseUnit ?? '약물단위'),
                     ),
                     const SizedBox(height: 14),
                     CalculatorRow(
@@ -1218,18 +1322,6 @@ class DepartmentCard extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF163647)),
               ),
-              const SizedBox(height: 6),
-              Text(
-                department.description,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF667085),
-                  height: 1.4,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
               const Spacer(),
               const SizedBox(height: 12),
               Container(
@@ -1271,7 +1363,7 @@ class SelectedChip extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE5EDF3)),
       ),
       child: Text(
-        '현재 선택: $label',
+        label,
         style: const TextStyle(
           fontWeight: FontWeight.w900,
           color: Color(0xFF344054),
@@ -1397,30 +1489,72 @@ class LabelPill extends StatelessWidget {
 }
 
 class UnitLabel extends StatelessWidget {
-  const UnitLabel(this.text,
-      {this.emphasized = false, this.compact = false, super.key});
+  const UnitLabel(this.text, {super.key});
 
   final String text;
-  final bool emphasized;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: compact ? 136 : 110,
+    return CalculatorSuffixSlot(
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Text(
           text,
           maxLines: 1,
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: compact ? 16 : (emphasized ? 30 : 24),
+          style: const TextStyle(
+            fontSize: calculatorUnitFontSize,
             fontWeight: FontWeight.w900,
-            color: const Color(0xFF163647),
+            color: Color(0xFF163647),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PresetDropdownLabel extends StatelessWidget {
+  const _PresetDropdownLabel({
+    required this.text,
+    this.scaleToFit = false,
+  });
+
+  final String text;
+  final bool scaleToFit;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = Text(
+      text,
+      maxLines: 1,
+      overflow: scaleToFit ? TextOverflow.visible : TextOverflow.ellipsis,
+      softWrap: false,
+      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+    );
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: scaleToFit
+          ? FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: label,
+            )
+          : label,
+    );
+  }
+}
+
+class CalculatorSuffixSlot extends StatelessWidget {
+  const CalculatorSuffixSlot({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: calculatorSuffixWidth,
+      child: Center(child: child),
     );
   }
 }
@@ -1433,11 +1567,11 @@ class RateSuffix extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 128,
+      width: calculatorSuffixWidth,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const UnitLabel('cc/hr', emphasized: true),
+          const UnitLabel('cc/hr'),
           if (showWarning)
             const Padding(
               padding: EdgeInsets.only(top: 6),
@@ -1489,6 +1623,128 @@ class ResultBox extends StatelessWidget {
   }
 }
 
+class PresetSearchResults extends StatelessWidget {
+  const PresetSearchResults({
+    required this.results,
+    required this.selectedPresetId,
+    required this.onSelected,
+    super.key,
+  });
+
+  final List<DrugPreset> results;
+  final String? selectedPresetId;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final visibleResults = results.take(6).toList();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFD9E4EA)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            results.isEmpty ? '검색 결과가 없어요' : '검색 결과 ${results.length}개',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF475467),
+            ),
+          ),
+          if (results.isEmpty) ...[
+            const SizedBox(height: 6),
+            const Text(
+              '약물명이나 약물 구분어로 다시 검색해 보세요.',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF667085),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 10),
+            for (final preset in visibleResults) ...[
+              _PresetSearchResultTile(
+                preset: preset,
+                selected: preset.id == selectedPresetId,
+                onTap: () => onSelected(preset.id),
+              ),
+              if (preset != visibleResults.last) const SizedBox(height: 8),
+            ],
+            if (results.length > visibleResults.length) ...[
+              const SizedBox(height: 10),
+              Text(
+                '외 ${results.length - visibleResults.length}개 더 있어요. 검색어를 조금 더 입력해 보세요.',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF667085),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PresetSearchResultTile extends StatelessWidget {
+  const _PresetSearchResultTile({
+    required this.preset,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DrugPreset preset;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? const Color(0xFFEAF7FD) : const Color(0xFFF9FBFD),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  preset.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF163647),
+                  ),
+                ),
+              ),
+              if (selected)
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF0F6784),
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class NoteBoard extends StatelessWidget {
   const NoteBoard({
     required this.mixLine,
@@ -1522,7 +1778,7 @@ class NoteBoard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoLine(label: '혼합', value: mixLine),
+          _InfoLine(label: '혼합', value: mixLine, maxLines: 2),
           const SizedBox(height: 14),
           _InfoLine(label: '범위', value: rangeText),
           const SizedBox(height: 14),
@@ -1561,10 +1817,15 @@ class NoteBoard extends StatelessWidget {
 }
 
 class _InfoLine extends StatelessWidget {
-  const _InfoLine({required this.label, required this.value});
+  const _InfoLine({
+    required this.label,
+    required this.value,
+    this.maxLines = 1,
+  });
 
   final String label;
   final String value;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -1586,7 +1847,7 @@ class _InfoLine extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            maxLines: 1,
+            maxLines: maxLines,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 12,
@@ -1732,8 +1993,8 @@ class PawPatternBackground extends StatelessWidget {
                 style: TextStyle(
                   fontSize: paws[i % paws.length] == '🐾' ? 22 : 14,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF98A2B3).withOpacity(
-                    paws[i % paws.length] == '🐾' ? 0.14 : 0.18,
+                  color: const Color(0xFF98A2B3).withValues(
+                    alpha: paws[i % paws.length] == '🐾' ? 0.14 : 0.18,
                   ),
                 ),
               ),
@@ -1781,13 +2042,6 @@ class SoftBottomNav extends StatelessWidget {
               label: 'Home',
               selected: selectedTab == 'home',
               onTap: () => onTap('home'),
-            ),
-            const SizedBox(width: 120),
-            _BottomNavItem(
-              icon: Icons.bookmark_border_rounded,
-              label: 'Presets',
-              selected: selectedTab == 'presets',
-              onTap: () => onTap('presets'),
             ),
           ],
         ),
@@ -1887,6 +2141,10 @@ String formatOptionalDose(double? value, String unit) {
   return '${formatNumber(value)} $unit';
 }
 
+String normalizeSearchText(String value) {
+  return value.toLowerCase().replaceAll(RegExp(r'[\s()/_-]+'), '');
+}
+
 String presetDropdownLabel(String presetName) {
   final withoutDose = presetName.replaceAll(
     RegExp(r'\s+\d+(?:\.\d+)?\s*(?:mg|mcg|iu)(?=\s*\(|$)',
@@ -1899,17 +2157,45 @@ String presetDropdownLabel(String presetName) {
   );
 }
 
+String mixDrugLabel(String drugName) {
+  final trimmed = drugName.trim();
+
+  if (RegExp(r'^[A-Za-z가-힣]+\([^()]+\)$').hasMatch(trimmed)) {
+    return trimmed.substring(0, trimmed.indexOf('(')).trim();
+  }
+
+  return presetDropdownLabel(trimmed).trim();
+}
+
 String extractMixLine(String note, String drugName) {
   if (note.trim().isEmpty) return '-';
   final lines = note.split('\n');
+
+  String attachDrugName(String mixBody) {
+    final normalizedDrugName = mixDrugLabel(drugName);
+    final normalizedMixBody = mixBody.trim();
+
+    if (normalizedDrugName.isEmpty || normalizedMixBody.isEmpty) {
+      return normalizedMixBody;
+    }
+
+    if (normalizedMixBody.toLowerCase().startsWith(
+          normalizedDrugName.toLowerCase(),
+        )) {
+      return normalizedMixBody;
+    }
+
+    return '$normalizedDrugName $normalizedMixBody';
+  }
+
   for (final line in lines) {
     if (line.toLowerCase().contains('mix')) {
       final mixBody =
           line.replaceFirst(RegExp(r'^mix\s*', caseSensitive: false), '');
-      return mixBody.trim();
+      return attachDrugName(mixBody);
     }
   }
-  return lines.first;
+  return attachDrugName(lines.first);
 }
 
 String extractAdditionalNote(String note) {
@@ -2109,7 +2395,7 @@ List<DrugPreset> buildDrugPresetVariants({
 }
 
 List<DrugPreset> defaultMicuPresets() {
-  return [
+  final presets = [
     buildDrugPreset(
       name: 'precedex(dexmedetomidine)',
       doseUnit: 'mcg/kg/hr',
@@ -2429,6 +2715,8 @@ List<DrugPreset> defaultMicuPresets() {
           'Mix 200 mg + 5DW 200 mL\n1 vial 100 mg 기준 / 총량 200 mg\n200mg/day 일반적으로 사용',
     ),
   ];
+  presets.sort((a, b) => a.name.compareTo(b.name));
+  return presets;
 }
 
 final List<DepartmentPreset> defaultDepartments = [
@@ -2444,282 +2732,286 @@ final List<DepartmentPreset> defaultDepartments = [
     label: 'SICU',
     icon: '🩺',
     description: '외과계 중환자실',
-    presets: [
-      buildDrugPreset(
-        name: 'amiodarone',
-        doseUnit: 'mg/min',
-        drugAmount: 450,
-        drugUnit: 'mg',
-        volumeMl: 250,
-        timeUnit: 'hr',
-        useWeight: false,
-        note: 'Mix 450 mg + 5DW 250 mL',
-      ),
-      buildDrugPreset(
-        name: 'esmolol',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 2500,
-        drugUnit: 'mg',
-        volumeMl: 250,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 50,
-        maxDose: 200,
-        note: 'Mix 2500 mg + NS 250 mL',
-      ),
-      buildDrugPreset(
-        name: 'lidocaine',
-        doseUnit: 'mg/hr',
-        drugAmount: 1600,
-        drugUnit: 'mg',
-        volumeMl: 120,
-        timeUnit: 'hr',
-        useWeight: false,
-        minDose: 60,
-        maxDose: 240,
-        note: 'Mix 1600 mg + NS 120 mL',
-      ),
-      buildDrugPreset(
-        name: 'labetalol',
-        doseUnit: 'mg/hr',
-        drugAmount: 500,
-        drugUnit: 'mg',
-        volumeMl: 250,
-        timeUnit: 'hr',
-        useWeight: false,
-        minDose: 2,
-        maxDose: 10,
-        note: 'Mix 500 mg + NS 250 mL',
-      ),
-      buildDrugPreset(
-        name: 'nicardipine (TS)',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 50,
-        drugUnit: 'mg',
-        volumeMl: 250,
-        timeUnit: 'hr',
-        useWeight: false,
-        minDose: 0.5,
-        maxDose: 3,
-        note: 'Mix 50 mg + NS 250 mL',
-      ),
-      buildDrugPreset(
-        name: 'nicardipine (타과)',
-        doseUnit: 'mg/hr',
-        drugAmount: 50,
-        drugUnit: 'mg',
-        volumeMl: 250,
-        timeUnit: 'hr',
-        useWeight: false,
-        minDose: 0.5,
-        maxDose: 3,
-        note: 'Mix 50 mg + NS 250 mL',
-      ),
-      buildDrugPreset(
-        name: 'nitroglycerin',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 50,
-        drugUnit: 'mg',
-        volumeMl: 250,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 0.5,
-        maxDose: 3,
-        note: 'Mix 50 mg + NS 250 mL',
-      ),
-      buildDrugPreset(
-        name: 'diltiazem',
-        doseUnit: 'mg/hr',
-        drugAmount: 50,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'hr',
-        useWeight: false,
-        note: 'Mix 50 mg + NS 50 mL',
-      ),
-      buildDrugPreset(
-        name: 'norepinephrine (TS)',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 12,
-        drugUnit: 'mg',
-        volumeMl: 200,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 0.02,
-        maxDose: 0.3,
-        note: 'Mix 12 mg + 5DW 200 mL',
-      ),
-      buildDrugPreset(
-        name: 'norepinephrine (타과)',
-        doseUnit: 'mcg/min',
-        drugAmount: 12,
-        drugUnit: 'mg',
-        volumeMl: 200,
-        timeUnit: 'hr',
-        useWeight: false,
-        minDose: 2,
-        maxDose: 64,
-        note: 'Mix 12 mg + 5DW 200 mL',
-      ),
-      buildDrugPreset(
-        name: 'epinephrine',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 6,
-        drugUnit: 'mg',
-        volumeMl: 100,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 0.02,
-        maxDose: 0.3,
-        note: 'Mix 6 mg + 5DW 100 mL',
-      ),
-      buildDrugPreset(
-        name: 'milrinone',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 50,
-        drugUnit: 'mg',
-        volumeMl: 200,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 0.5,
-        maxDose: 1,
-        note: 'Mix 50 mg + NS 200 mL',
-      ),
-      buildDrugPreset(
-        name: 'dopamix',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 400,
-        drugUnit: 'mg',
-        volumeMl: 200,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 1,
-        maxDose: 20,
-        note: 'Mix 400 mg + 5DW 200 mL',
-      ),
-      buildDrugPreset(
-        name: 'dobutamix',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 500,
-        drugUnit: 'mg',
-        volumeMl: 250,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 1,
-        maxDose: 20,
-        note: 'Mix 500 mg + 5DW 250 mL',
-      ),
-      buildDrugPreset(
-        name: 'vasopressin',
-        doseUnit: 'iu/min',
-        drugAmount: 20,
-        drugUnit: 'iu',
-        volumeMl: 20,
-        timeUnit: 'hr',
-        useWeight: false,
-        minDose: 0.02,
-        maxDose: 0.06,
-        note: 'Mix 20 iu + 5DW 20 mL',
-      ),
-      buildDrugPreset(
-        name: 'precedex',
-        doseUnit: 'mcg/kg/hr',
-        drugAmount: 400,
-        drugUnit: 'mcg',
-        volumeMl: 100,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 0.2,
-        maxDose: 1,
-        note: 'Mix 400 mcg + NS 100 mL',
-      ),
-      buildDrugPreset(
-        name: 'remifentanil',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 2,
-        drugUnit: 'mg',
-        volumeMl: 40,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 0.02,
-        maxDose: 2,
-        note: 'Mix 2 mg + NS 40 mL',
-      ),
-      buildDrugPreset(
-        name: 'vecuronium (TS)',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 50,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'hr',
-        useWeight: true,
-        note: 'Mix 50 mg + NS 50 mL',
-      ),
-      buildDrugPreset(
-        name: 'vecuronium (타과)',
-        doseUnit: 'mg/hr',
-        drugAmount: 50,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'hr',
-        useWeight: false,
-        note: 'Mix 50 mg + NS 50 mL',
-      ),
-      buildDrugPreset(
-        name: 'rocuronium (TS)',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 500,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 5,
-        maxDose: 10,
-        note: '원액 50 ml',
-      ),
-      buildDrugPreset(
-        name: 'rocuronium (NS)',
-        doseUnit: 'mg/kg/hr',
-        drugAmount: 500,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'hr',
-        useWeight: true,
-        minDose: 0.3,
-        maxDose: 0.6,
-        note: '원액 50 ml',
-      ),
-      buildDrugPreset(
-        name: 'rocuronium (GS)',
-        doseUnit: 'mcg/kg/hr',
-        drugAmount: 500,
-        drugUnit: 'mg',
-        volumeMl: 50,
-        timeUnit: 'hr',
-        useWeight: true,
-        note: '원액 50 ml',
-      ),
-      buildDrugPreset(
-        name: 'midazolam (TS)',
-        doseUnit: 'mcg/kg/min',
-        drugAmount: 45,
-        drugUnit: 'mg',
-        volumeMl: 45,
-        timeUnit: 'hr',
-        useWeight: true,
-        note: 'Mix 45 mg + NS 45 mL',
-      ),
-      buildDrugPreset(
-        name: 'midazolam (타과)',
-        doseUnit: 'mg/hr',
-        drugAmount: 45,
-        drugUnit: 'mg',
-        volumeMl: 45,
-        timeUnit: 'hr',
-        useWeight: false,
-        note: 'Mix 45 mg + NS 45 mL',
-      ),
-    ],
+    presets: (() {
+      final list = [
+        buildDrugPreset(
+          name: 'amiodarone',
+          doseUnit: 'mg/min',
+          drugAmount: 450,
+          drugUnit: 'mg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: false,
+          note: 'Mix 450 mg + 5DW 250 mL',
+        ),
+        buildDrugPreset(
+          name: 'esmolol',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 2500,
+          drugUnit: 'mg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 50,
+          maxDose: 200,
+          note: 'Mix 2500 mg + NS 250 mL',
+        ),
+        buildDrugPreset(
+          name: 'lidocaine',
+          doseUnit: 'mg/hr',
+          drugAmount: 1600,
+          drugUnit: 'mg',
+          volumeMl: 120,
+          timeUnit: 'hr',
+          useWeight: false,
+          minDose: 60,
+          maxDose: 240,
+          note: 'Mix 1600 mg + NS 120 mL',
+        ),
+        buildDrugPreset(
+          name: 'labetalol',
+          doseUnit: 'mg/hr',
+          drugAmount: 500,
+          drugUnit: 'mg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: false,
+          minDose: 2,
+          maxDose: 10,
+          note: 'Mix 500 mg + NS 250 mL',
+        ),
+        buildDrugPreset(
+          name: 'nicardipine (TS)',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 50,
+          drugUnit: 'mg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: false,
+          minDose: 0.5,
+          maxDose: 3,
+          note: 'Mix 50 mg + NS 250 mL',
+        ),
+        buildDrugPreset(
+          name: 'nicardipine (타과)',
+          doseUnit: 'mg/hr',
+          drugAmount: 50,
+          drugUnit: 'mg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: false,
+          minDose: 0.5,
+          maxDose: 3,
+          note: 'Mix 50 mg + NS 250 mL',
+        ),
+        buildDrugPreset(
+          name: 'nitroglycerin',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 50,
+          drugUnit: 'mg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.5,
+          maxDose: 3,
+          note: 'Mix 50 mg + NS 250 mL',
+        ),
+        buildDrugPreset(
+          name: 'diltiazem',
+          doseUnit: 'mg/hr',
+          drugAmount: 50,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'hr',
+          useWeight: false,
+          note: 'Mix 50 mg + NS 50 mL',
+        ),
+        buildDrugPreset(
+          name: 'norepinephrine (TS)',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 12,
+          drugUnit: 'mg',
+          volumeMl: 200,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.02,
+          maxDose: 0.3,
+          note: 'Mix 12 mg + 5DW 200 mL',
+        ),
+        buildDrugPreset(
+          name: 'norepinephrine (타과)',
+          doseUnit: 'mcg/min',
+          drugAmount: 12,
+          drugUnit: 'mg',
+          volumeMl: 200,
+          timeUnit: 'hr',
+          useWeight: false,
+          minDose: 2,
+          maxDose: 64,
+          note: 'Mix 12 mg + 5DW 200 mL',
+        ),
+        buildDrugPreset(
+          name: 'epinephrine',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 6,
+          drugUnit: 'mg',
+          volumeMl: 100,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.02,
+          maxDose: 0.3,
+          note: 'Mix 6 mg + 5DW 100 mL',
+        ),
+        buildDrugPreset(
+          name: 'milrinone',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 50,
+          drugUnit: 'mg',
+          volumeMl: 200,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.5,
+          maxDose: 1,
+          note: 'Mix 50 mg + NS 200 mL',
+        ),
+        buildDrugPreset(
+          name: 'dopamix',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 400,
+          drugUnit: 'mg',
+          volumeMl: 200,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 1,
+          maxDose: 20,
+          note: 'Mix 400 mg + 5DW 200 mL',
+        ),
+        buildDrugPreset(
+          name: 'dobutamix',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 500,
+          drugUnit: 'mg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 1,
+          maxDose: 20,
+          note: 'Mix 500 mg + 5DW 250 mL',
+        ),
+        buildDrugPreset(
+          name: 'vasopressin',
+          doseUnit: 'iu/min',
+          drugAmount: 20,
+          drugUnit: 'iu',
+          volumeMl: 20,
+          timeUnit: 'hr',
+          useWeight: false,
+          minDose: 0.02,
+          maxDose: 0.06,
+          note: 'Mix 20 iu + 5DW 20 mL',
+        ),
+        buildDrugPreset(
+          name: 'precedex',
+          doseUnit: 'mcg/kg/hr',
+          drugAmount: 400,
+          drugUnit: 'mcg',
+          volumeMl: 100,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.2,
+          maxDose: 1,
+          note: 'Mix 400 mcg + NS 100 mL',
+        ),
+        buildDrugPreset(
+          name: 'remifentanil',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 2,
+          drugUnit: 'mg',
+          volumeMl: 40,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.02,
+          maxDose: 2,
+          note: 'Mix 2 mg + NS 40 mL',
+        ),
+        buildDrugPreset(
+          name: 'vecuronium (TS)',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 50,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'hr',
+          useWeight: true,
+          note: 'Mix 50 mg + NS 50 mL',
+        ),
+        buildDrugPreset(
+          name: 'vecuronium (타과)',
+          doseUnit: 'mg/hr',
+          drugAmount: 50,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'hr',
+          useWeight: false,
+          note: 'Mix 50 mg + NS 50 mL',
+        ),
+        buildDrugPreset(
+          name: 'rocuronium (TS)',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 500,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 5,
+          maxDose: 10,
+          note: '원액 50 ml',
+        ),
+        buildDrugPreset(
+          name: 'rocuronium (NS)',
+          doseUnit: 'mg/kg/hr',
+          drugAmount: 500,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.3,
+          maxDose: 0.6,
+          note: '원액 50 ml',
+        ),
+        buildDrugPreset(
+          name: 'rocuronium (GS)',
+          doseUnit: 'mcg/kg/hr',
+          drugAmount: 500,
+          drugUnit: 'mg',
+          volumeMl: 50,
+          timeUnit: 'hr',
+          useWeight: true,
+          note: '원액 50 ml',
+        ),
+        buildDrugPreset(
+          name: 'midazolam (TS)',
+          doseUnit: 'mcg/kg/min',
+          drugAmount: 45,
+          drugUnit: 'mg',
+          volumeMl: 45,
+          timeUnit: 'hr',
+          useWeight: true,
+          note: 'Mix 45 mg + NS 45 mL',
+        ),
+        buildDrugPreset(
+          name: 'midazolam (타과)',
+          doseUnit: 'mg/hr',
+          drugAmount: 45,
+          drugUnit: 'mg',
+          volumeMl: 45,
+          timeUnit: 'hr',
+          useWeight: false,
+          note: 'Mix 45 mg + NS 45 mL',
+        ),
+      ];
+      list.sort((a, b) => a.name.compareTo(b.name));
+      return list;
+    })(),
   ),
   DepartmentPreset(
     id: 'eicu2',
@@ -3014,7 +3306,8 @@ final List<DepartmentPreset> defaultDepartments = [
         useWeight: true,
         minDose: 50,
         maxDose: 200,
-        note: 'Mix 2500 mg + NS/5DW 250 mL\n비고: 0.25~0.5mg/kg over 2min loading',
+        note:
+            'Mix 2500 mg + NS/5DW 250 mL\n비고: 0.25~0.5mg/kg over 2min loading',
       ),
       buildDrugPreset(
         name: 'diltiazem',
@@ -3145,7 +3438,7 @@ class DepartmentPreset {
   final String description;
   final List<DrugPreset> presets;
 
-  String get displayTitle => '$label $description';
+  String get displayTitle => label;
 }
 
 class DrugPreset {
