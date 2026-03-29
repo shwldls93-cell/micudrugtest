@@ -114,6 +114,56 @@ DrugPreset buildDrugPreset({
   );
 }
 
+bool _isLegacyNcuMgso4Name(String name) {
+  final normalized = name.trim().toLowerCase();
+  return normalized == 'mgso4 (sah)' || normalized == 'mgso4 (ttm)';
+}
+
+DrugPreset buildNcuMgso4Preset() {
+  return buildDrugPreset(
+    name: 'MgSO4',
+    doseUnit: 'mcg/kg/hr',
+    drugAmount: 6,
+    drugUnit: 'g',
+    volumeMl: 60,
+    timeUnit: 'hr',
+    useWeight: true,
+    note:
+        '원액 60 mL\n2 g x 3 amp = 6 g\nInitial 0.1 g/hr\nq6hr f/u, target 맞춰 증감량',
+  );
+}
+
+bool shouldReplaceLegacyNcuMgso4Presets(List<DrugPreset> presets) {
+  if (presets.isEmpty) return false;
+
+  final names = presets.map((preset) => preset.name.trim().toLowerCase()).toSet();
+  final hasLegacyEntry = names.any(_isLegacyNcuMgso4Name);
+  final hasCurrentEntry = names.contains('mgso4');
+
+  return hasLegacyEntry && !hasCurrentEntry;
+}
+
+List<DrugPreset> replaceLegacyNcuMgso4Presets(List<DrugPreset> presets) {
+  final firstLegacyIndex = presets.indexWhere(
+    (preset) => _isLegacyNcuMgso4Name(preset.name),
+  );
+
+  final nextList = presets
+      .where((preset) => !_isLegacyNcuMgso4Name(preset.name))
+      .map((preset) => preset.copy())
+      .toList();
+
+  if (!nextList.any((preset) => preset.name.trim().toLowerCase() == 'mgso4')) {
+    final insertIndex =
+        firstLegacyIndex < 0 || firstLegacyIndex > nextList.length
+            ? nextList.length
+            : firstLegacyIndex;
+    nextList.insert(insertIndex, buildNcuMgso4Preset());
+  }
+
+  return ensureUniquePresetIds(nextList);
+}
+
 List<DrugPreset> defaultMicuPresets() {
   final presets = [
     buildDrugPreset(
@@ -1111,26 +1161,7 @@ final List<DepartmentPreset> defaultDepartments = [
         maxDose: 40,
         note: 'Mix 100 mg + 20% albumin (또는 20% mannitol) 40 mL',
       ),
-      buildDrugPreset(
-        name: 'MgSO4 (SAH)',
-        doseUnit: 'g/day',
-        drugAmount: 2,
-        drugUnit: 'g',
-        volumeMl: 20,
-        timeUnit: 'day',
-        useWeight: false,
-        note: '원액 20 mL',
-      ),
-      buildDrugPreset(
-        name: 'MgSO4 (TTM)',
-        doseUnit: 'g/hr',
-        drugAmount: 2,
-        drugUnit: 'g',
-        volumeMl: 50,
-        timeUnit: 'hr',
-        useWeight: false,
-        note: 'Mix 2 g + NS/5DW 50 mL',
-      ),
+      buildNcuMgso4Preset(),
       buildDrugPreset(
         name: 'tirofiban',
         doseUnit: 'mcg/kg/min',
