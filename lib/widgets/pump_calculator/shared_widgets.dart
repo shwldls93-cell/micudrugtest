@@ -179,7 +179,7 @@ class CalculatorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FBFD),
         borderRadius: BorderRadius.circular(24),
@@ -311,8 +311,8 @@ class ResultBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 62),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      constraints: const BoxConstraints(minHeight: 74),
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(22),
@@ -323,7 +323,7 @@ class ResultBox extends StatelessWidget {
         child: Text(
           value,
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 30,
             fontWeight: FontWeight.w900,
             color:
                 isWarning ? const Color(0xFFC12828) : const Color(0xFF101828),
@@ -378,7 +378,7 @@ InputDecoration rowDecoration({String? hint}) {
     hintText: hint,
     filled: true,
     fillColor: const Color(0xFFFFFFFF),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
     border: roundedInputBorder(),
     enabledBorder: roundedInputBorder(),
     focusedBorder: roundedInputBorder(color: const Color(0xFF8FD5F7)),

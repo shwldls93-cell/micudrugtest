@@ -80,7 +80,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   String? _selectedDepartmentId;
   String? _selectedPresetId;
   String _resultValue = '--';
-  String _resultDetail = '약물과 값을 입력하면 계산식이 표시됩니다.';
+  String _resultDetail = '';
   bool _resultError = false;
   bool _resultDoseWarning = false;
   bool _useWeight = true;
@@ -253,7 +253,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
   void _applyDefaultResult([String? detail]) {
     _resultValue = '--';
-    _resultDetail = detail ?? '약물과 값을 입력하면 계산식이 표시됩니다.';
+    _resultDetail = detail ?? '';
     _resultError = false;
     _resultDoseWarning = false;
   }
@@ -326,70 +326,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     _noteController.text = preset.note;
     _selectedTimeUnit = resolveDoseTimeUnitId(preset);
     _useWeight = preset.useWeight;
-  }
-
-  void _calculate() {
-    if (!_calculatorFormKey.currentState!.validate()) return;
-
-    final preset = _selectedPreset;
-    if (preset == null) {
-      setState(() {
-        _resultValue = '입력 확인';
-        _resultDetail = '먼저 부서를 선택하고 약물을 선택해 주세요.';
-        _resultError = true;
-        _resultDoseWarning = false;
-      });
-      return;
-    }
-
-    final dose = double.tryParse(_doseController.text.trim());
-    final weight = double.tryParse(_weightController.text.trim());
-
-    if (dose == null || dose <= 0) {
-      setState(() {
-        _resultValue = '입력 확인';
-        _resultDetail = '목표 용량을 0보다 큰 숫자로 입력해 주세요.';
-        _resultError = true;
-        _resultDoseWarning = false;
-      });
-      return;
-    }
-
-    if (preset.useWeight && (weight == null || weight <= 0)) {
-      setState(() {
-        _resultValue = '입력 확인';
-        _resultDetail = '체중 기반 약물이므로 몸무게를 입력해 주세요.';
-        _resultError = true;
-        _resultDoseWarning = false;
-      });
-      return;
-    }
-
-    try {
-      final rangeWarning = validateDoseRange(dose, preset);
-      final rate = calculateRate(
-        dose: dose,
-        weight: weight ?? 0,
-        preset: preset,
-      );
-      final roundedRate = roundCalculatedRate(rate, preset);
-
-      setState(() {
-        _resultValue = formatCalculatedRate(roundedRate, preset);
-        _resultDetail = rangeWarning != null
-            ? '$rangeWarning 주입용량확인'
-            : '계산된 주입속도를 infusion pump에 입력해 주세요.';
-        _resultError = rangeWarning != null;
-        _resultDoseWarning = rangeWarning != null;
-      });
-    } on CalculationInputException catch (error) {
-      setState(() {
-        _resultValue = '단위 확인';
-        _resultDetail = error.message;
-        _resultError = true;
-        _resultDoseWarning = false;
-      });
-    }
   }
 
   void _autoCalculate() {
@@ -660,7 +596,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                         presetSearchController: _presetSearchController,
                         presetSearchQuery: _presetSearchQuery,
                         presetSearchResults: _presetSearchResults,
-                        onCalculate: _calculate,
                         onPresetChanged: _changeSelectedPreset,
                         onPresetSearchChanged: (value) {
                           setState(() => _presetSearchQuery = value);
@@ -705,9 +640,14 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
         shape: roundedBorder(),
         backgroundColor: const Color(0xF7FFFFFF),
         collapsedBackgroundColor: const Color(0xF0FFFFFF),
-        title: const Text(
-          '약물 계산식 추가 / 수정 / 비고 관리',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '약물 계산식 추가/수정/비고 관리',
+            maxLines: 1,
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
+          ),
         ),
         childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         children: [

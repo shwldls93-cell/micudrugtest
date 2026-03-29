@@ -21,7 +21,6 @@ class CalculatorSection extends StatelessWidget {
     required this.presetSearchController,
     required this.presetSearchQuery,
     required this.presetSearchResults,
-    required this.onCalculate,
     required this.onPresetChanged,
     required this.onPresetSearchChanged,
     required this.onPresetSearchSelected,
@@ -48,7 +47,6 @@ class CalculatorSection extends StatelessWidget {
   final TextEditingController presetSearchController;
   final String presetSearchQuery;
   final List<DrugPreset> presetSearchResults;
-  final VoidCallback onCalculate;
   final ValueChanged<String?> onPresetChanged;
   final ValueChanged<String> onPresetSearchChanged;
   final ValueChanged<String> onPresetSearchSelected;
@@ -219,49 +217,23 @@ class CalculatorSection extends StatelessWidget {
                       suffix: RateSuffix(showWarning: resultDoseWarning),
                     ),
                     const SizedBox(height: 18),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        FilledButton(
-                          onPressed: onCalculate,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F6784),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 18,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton(
+                        onPressed: onResetPresets,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF0F6784),
+                          side: const BorderSide(color: Color(0xFFB8D8E6)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 18,
                           ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('속도 계산하기'),
-                              SizedBox(width: 8),
-                              Icon(Icons.calculate_rounded, size: 20),
-                            ],
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
                           ),
                         ),
-                        OutlinedButton(
-                          onPressed: onResetPresets,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF0F6784),
-                            side: const BorderSide(color: Color(0xFFB8D8E6)),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 18,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                          ),
-                          child: const Text('현재 부서 기본값 복원'),
-                        ),
-                      ],
+                        child: const Text('현재 부서 기본값 복원'),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     _NoteBoard(
@@ -460,6 +432,7 @@ class _NoteBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasAdditionalNote = additionalNote.trim().isNotEmpty;
+    final hasResultDetail = resultDetail.trim().isNotEmpty;
 
     return Container(
       width: double.infinity,
@@ -491,19 +464,21 @@ class _NoteBoard extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 14),
-          Text(
-            resultDetail,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: resultError
-                  ? const Color(0xFFC12828)
-                  : const Color(0xFF475467),
+          if (hasResultDetail) ...[
+            const SizedBox(height: 14),
+            Text(
+              resultDetail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: resultError
+                    ? const Color(0xFFC12828)
+                    : const Color(0xFF475467),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
