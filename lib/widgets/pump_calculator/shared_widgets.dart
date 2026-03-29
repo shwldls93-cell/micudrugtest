@@ -179,7 +179,7 @@ class CalculatorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+      padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FBFD),
         borderRadius: BorderRadius.circular(24),
@@ -194,7 +194,7 @@ class CalculatorRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(child: child),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               suffix,
             ],
           ),
@@ -378,7 +378,7 @@ InputDecoration rowDecoration({String? hint}) {
     hintText: hint,
     filled: true,
     fillColor: const Color(0xFFFFFFFF),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
     border: roundedInputBorder(),
     enabledBorder: roundedInputBorder(),
     focusedBorder: roundedInputBorder(color: const Color(0xFF8FD5F7)),

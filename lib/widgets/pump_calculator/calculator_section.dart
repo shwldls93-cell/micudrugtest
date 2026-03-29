@@ -275,7 +275,11 @@ class _PresetDropdownLabel extends StatelessWidget {
       maxLines: 1,
       overflow: scaleToFit ? TextOverflow.visible : TextOverflow.ellipsis,
       softWrap: false,
-      style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800),
+      style: TextStyle(
+        fontSize: scaleToFit ? 17.0 : 15.0,
+        fontWeight: scaleToFit ? FontWeight.w900 : FontWeight.w800,
+        height: 1.0,
+      ),
     );
 
     return Align(
