@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -158,15 +160,18 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
         mergedMap = {};
         for (final department in defaultDepartments) {
           var savedList = (decoded[department.id] as List<dynamic>?)
-                  ?.map((item) => DrugPreset.fromJson(item as Map<String, dynamic>))
+                  ?.map((item) =>
+                      DrugPreset.fromJson(item as Map<String, dynamic>))
                   .toList() ??
               <DrugPreset>[];
-          if (department.id == 'micu' && shouldReplaceLegacyMicuPresets(savedList)) {
+          if (department.id == 'micu' &&
+              shouldReplaceLegacyMicuPresets(savedList)) {
             savedList = <DrugPreset>[];
           }
           mergedMap[department.id] = savedList.isNotEmpty
               ? ensureUniquePresetIds(savedList)
-              : ensureUniquePresetIds(department.presets.map((preset) => preset.copy()).toList());
+              : ensureUniquePresetIds(
+                  department.presets.map((preset) => preset.copy()).toList());
         }
       } catch (_) {
         mergedMap = defaultPresetMap();
@@ -175,10 +180,12 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
     setState(() {
       _presetsByDepartment = mergedMap;
-      _selectedDepartmentId = savedDepartment != null && mergedMap.containsKey(savedDepartment)
-          ? savedDepartment
-          : null;
-      _selectedPresetId = _currentPresets.isNotEmpty ? _currentPresets.first.id : null;
+      _selectedDepartmentId =
+          savedDepartment != null && mergedMap.containsKey(savedDepartment)
+              ? savedDepartment
+              : null;
+      _selectedPresetId =
+          _currentPresets.isNotEmpty ? _currentPresets.first.id : null;
       _syncEditorWithSelectedPreset();
       _isLoading = false;
     });
@@ -386,7 +393,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       _selectedPresetId = preset.id;
       _syncEditorWithSelectedPreset();
       _resultValue = '저장 완료';
-      _resultDetail = '${_currentDepartment?.label ?? ''} 부서에 ${preset.name} 계산식을 저장했습니다.';
+      _resultDetail =
+          '${_currentDepartment?.label ?? ''} 부서에 ${preset.name} 계산식을 저장했습니다.';
       _resultError = false;
       _resultDoseWarning = false;
     });
@@ -405,8 +413,10 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     );
     if (!confirmed) return;
 
-    final updated = _currentPresets.where((item) => item.id != preset.id).toList();
-    final nextList = updated.isNotEmpty ? updated : defaultPresetMap()[departmentId]!;
+    final updated =
+        _currentPresets.where((item) => item.id != preset.id).toList();
+    final nextList =
+        updated.isNotEmpty ? updated : defaultPresetMap()[departmentId]!;
 
     setState(() {
       _presetsByDepartment[departmentId] = nextList;
@@ -439,7 +449,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     await _saveState();
   }
 
-  Future<bool> _confirm({required String title, required String message}) async {
+  Future<bool> _confirm(
+      {required String title, required String message}) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -518,7 +529,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                     Container(
                       key: _landingSectionKey,
                       child: _LandingSection(
-                        selectedDepartmentLabel: _currentDepartment?.label ?? '선택 전',
+                        selectedDepartmentLabel:
+                            _currentDepartment?.label ?? '선택 전',
                         onSelectDepartment: _selectDepartment,
                         selectedDepartmentId: _selectedDepartmentId,
                       ),
@@ -528,7 +540,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                       Container(
                         key: _calculatorSectionKey,
                         child: _CalculatorSection(
-                          departmentLabel: _currentDepartment?.displayTitle ?? '-',
+                          departmentLabel:
+                              _currentDepartment?.displayTitle ?? '-',
                           presets: _currentPresets,
                           selectedPresetId: _selectedPresetId,
                           selectedPreset: _selectedPreset,
@@ -585,13 +598,36 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                   spacing: 16,
                   runSpacing: 16,
                   children: [
-                    _EditorField(controller: _nameController, label: '약물명', width: 260),
-                    _EditorField(controller: _doseUnitController, label: '목표 용량 단위', width: 260),
-                    _EditorField(controller: _minDoseController, label: '최소 용량 (선택)', width: 220, keyboardType: TextInputType.number),
-                    _EditorField(controller: _maxDoseController, label: '최대 용량 (선택)', width: 220, keyboardType: TextInputType.number),
-                    _EditorField(controller: _drugAmountController, label: '총 약물량', width: 220, keyboardType: TextInputType.number),
-                    _EditorField(controller: _drugUnitController, label: '총 약물량 단위', width: 220),
-                    _EditorField(controller: _volumeController, label: '용매량 (mL)', width: 220, keyboardType: TextInputType.number),
+                    _EditorField(
+                        controller: _nameController, label: '약물명', width: 260),
+                    _EditorField(
+                        controller: _doseUnitController,
+                        label: '목표 용량 단위',
+                        width: 260),
+                    _EditorField(
+                        controller: _minDoseController,
+                        label: '최소 용량 (선택)',
+                        width: 220,
+                        keyboardType: TextInputType.number),
+                    _EditorField(
+                        controller: _maxDoseController,
+                        label: '최대 용량 (선택)',
+                        width: 220,
+                        keyboardType: TextInputType.number),
+                    _EditorField(
+                        controller: _drugAmountController,
+                        label: '총 약물량',
+                        width: 220,
+                        keyboardType: TextInputType.number),
+                    _EditorField(
+                        controller: _drugUnitController,
+                        label: '총 약물량 단위',
+                        width: 220),
+                    _EditorField(
+                        controller: _volumeController,
+                        label: '용매량 (mL)',
+                        width: 220,
+                        keyboardType: TextInputType.number),
                     SizedBox(
                       width: 220,
                       child: DropdownButtonFormField<String>(
@@ -614,7 +650,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                 TextFormField(
                   controller: _noteController,
                   maxLines: 4,
-                  decoration: editorDecoration('비고 / Mix 공식 / Loading dose / 특이사항'),
+                  decoration:
+                      editorDecoration('비고 / Mix 공식 / Loading dose / 특이사항'),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -623,8 +660,10 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                       child: SwitchListTile(
                         value: _useWeight,
                         title: const Text('체중 기반 계산 사용'),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                        onChanged: (value) => setState(() => _useWeight = value),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 8),
+                        onChanged: (value) =>
+                            setState(() => _useWeight = value),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -633,8 +672,10 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF111827),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 18),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18)),
                       ),
                       child: const Text('약물 저장'),
                     ),
@@ -742,13 +783,13 @@ class _CalculatorSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final preset = selectedPreset;
-    final timeMultiplier = preset == null ? '1' : timeUnitFactorLabel(preset.timeUnit);
+    final timeMultiplier =
+        preset == null ? '1' : timeUnitFactorLabel(preset.timeUnit);
     final rangeText = preset == null
         ? '-'
         : '${formatOptionalDose(preset.minDose, preset.doseUnit)} ~ ${formatOptionalDose(preset.maxDose, preset.doseUnit)}';
-    final mixLine = preset == null
-        ? '-'
-        : extractMixLine(preset.note, preset.name);
+    final mixLine =
+        preset == null ? '-' : extractMixLine(preset.note, preset.name);
     final formulaText = preset == null
         ? '-'
         : '목표용량 × ${preset.useWeight ? '체중 × ' : ''}$timeMultiplier × ${formatNumber(preset.volumeMl)} ÷ ${formatNumber(preset.drugAmount)}';
@@ -766,7 +807,8 @@ class _CalculatorSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           DecoratedBox(
-            decoration: roundedDecoration(color: const Color(0xFFFFFFFF), radius: 32),
+            decoration:
+                roundedDecoration(color: const Color(0xFFFFFFFF), radius: 32),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Form(
@@ -786,7 +828,10 @@ class _CalculatorSection extends StatelessWidget {
                                   presetDropdownLabel(preset.name),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+                                  softWrap: false,
+                                  style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700),
                                 ),
                               ),
                             )
@@ -799,14 +844,18 @@ class _CalculatorSection extends StatelessWidget {
                                   presetDropdownLabel(preset.name),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+                                  softWrap: false,
+                                  style: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w700),
                                 ),
                               ),
                             )
                             .toList(),
                         onChanged: onPresetChanged,
                       ),
-                      suffix: const Icon(Icons.keyboard_arrow_down_rounded, size: 28, color: Color(0xFF0F6784)),
+                      suffix: const Icon(Icons.keyboard_arrow_down_rounded,
+                          size: 28, color: Color(0xFF0F6784)),
                     ),
                     const SizedBox(height: 14),
                     CalculatorRow(
@@ -814,7 +863,8 @@ class _CalculatorSection extends StatelessWidget {
                       child: TextFormField(
                         controller: weightController,
                         enabled: preset?.useWeight ?? true,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         decoration: rowDecoration(hint: '몸무게 입력'),
                       ),
                       suffix: const UnitLabel('kg'),
@@ -839,16 +889,22 @@ class _CalculatorSection extends StatelessWidget {
                       label: '주입용량',
                       child: TextFormField(
                         controller: doseController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         decoration: rowDecoration(hint: '용량 입력'),
-                        validator: (value) => (value == null || value.trim().isEmpty) ? '용량 입력' : null,
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                                ? '용량 입력'
+                                : null,
                       ),
-                      suffix: UnitLabel(preset?.doseUnit ?? '약물단위', compact: true),
+                      suffix:
+                          UnitLabel(preset?.doseUnit ?? '약물단위', compact: true),
                     ),
                     const SizedBox(height: 14),
                     CalculatorRow(
                       label: '주입속도',
-                      child: ResultBox(value: resultValue, isWarning: resultDoseWarning),
+                      child: ResultBox(
+                          value: resultValue, isWarning: resultDoseWarning),
                       suffix: RateSuffix(showWarning: resultDoseWarning),
                     ),
                     const SizedBox(height: 18),
@@ -862,8 +918,10 @@ class _CalculatorSection extends StatelessWidget {
                           style: FilledButton.styleFrom(
                             backgroundColor: const Color(0xFF0F6784),
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 18),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24)),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
@@ -879,8 +937,10 @@ class _CalculatorSection extends StatelessWidget {
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF0F6784),
                             side: const BorderSide(color: Color(0xFFB8D8E6)),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 18),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24)),
                           ),
                           child: const Text('현재 부서 기본값 복원'),
                         ),
@@ -891,7 +951,9 @@ class _CalculatorSection extends StatelessWidget {
                       mixLine: mixLine,
                       rangeText: rangeText,
                       formulaText: formulaText,
-                      additionalNote: preset == null ? '' : extractAdditionalNote(preset.note),
+                      additionalNote: preset == null
+                          ? ''
+                          : extractAdditionalNote(preset.note),
                       resultDetail: resultDetail,
                       resultError: resultError,
                     ),
@@ -981,7 +1043,8 @@ class CloudHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.favorite_rounded, color: Color(0xFFB85C7A), size: 20),
+                child: const Icon(Icons.favorite_rounded,
+                    color: Color(0xFFB85C7A), size: 20),
               ),
             ],
           ),
@@ -1019,8 +1082,12 @@ class TitleStack extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FlatTitle(text: '스누비', color: const Color(0xFF0F6784), fontSize: fontSize),
-        FlatTitle(text: '쫀득 계산기', color: const Color(0xFF293056), fontSize: fontSize - 2),
+        FlatTitle(
+            text: '스누비', color: const Color(0xFF0F6784), fontSize: fontSize),
+        FlatTitle(
+            text: '쫀득 계산기',
+            color: const Color(0xFF293056),
+            fontSize: fontSize - 2),
       ],
     );
   }
@@ -1068,7 +1135,8 @@ class PickBanner extends StatelessWidget {
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.local_hospital_rounded, color: Color(0xFF0F6784), size: 18),
+          Icon(Icons.local_hospital_rounded,
+              color: Color(0xFF0F6784), size: 18),
           SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -1112,7 +1180,8 @@ class DepartmentCard extends StatelessWidget {
             color: selected ? const Color(0xFFEAF7FD) : const Color(0xFFFFFFFF),
             borderRadius: BorderRadius.circular(26),
             border: Border.all(
-              color: selected ? const Color(0xFF8FD5F7) : const Color(0xFFE5EDF3),
+              color:
+                  selected ? const Color(0xFF8FD5F7) : const Color(0xFFE5EDF3),
               width: selected ? 1.8 : 1.0,
             ),
             boxShadow: const [
@@ -1138,12 +1207,16 @@ class DepartmentCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(18),
                 ),
                 alignment: Alignment.center,
-                child: Text(department.icon, style: const TextStyle(fontSize: 26)),
+                child:
+                    Text(department.icon, style: const TextStyle(fontSize: 26)),
               ),
               const SizedBox(height: 14),
               Text(
                 department.label,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF163647)),
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF163647)),
               ),
               const SizedBox(height: 6),
               Text(
@@ -1160,14 +1233,18 @@ class DepartmentCard extends StatelessWidget {
               const Spacer(),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFFD9F0FB) : const Color(0xFFF2F5F8),
+                  color: selected
+                      ? const Color(0xFFD9F0FB)
+                      : const Color(0xFFF2F5F8),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   selected ? '선택됨' : '탭해서 선택',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+                  style: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w800),
                 ),
               ),
             ],
@@ -1229,9 +1306,13 @@ class CurrentDepartmentBox extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('현재 선택 부서', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF667085))),
+                const Text('현재 선택 부서',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, color: Color(0xFF667085))),
                 const SizedBox(height: 6),
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w900)),
               ],
             ),
           ),
@@ -1305,7 +1386,10 @@ class LabelPill extends StatelessWidget {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF0F6784)),
+          style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F6784)),
         ),
       ),
     );
@@ -1313,7 +1397,8 @@ class LabelPill extends StatelessWidget {
 }
 
 class UnitLabel extends StatelessWidget {
-  const UnitLabel(this.text, {this.emphasized = false, this.compact = false, super.key});
+  const UnitLabel(this.text,
+      {this.emphasized = false, this.compact = false, super.key});
 
   final String text;
   final bool emphasized;
@@ -1395,7 +1480,8 @@ class ResultBox extends StatelessWidget {
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w900,
-            color: isWarning ? const Color(0xFFC12828) : const Color(0xFF101828),
+            color:
+                isWarning ? const Color(0xFFC12828) : const Color(0xFF101828),
           ),
         ),
       ),
@@ -1436,18 +1522,20 @@ class NoteBoard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoLine(icon: '📝', label: 'Mix', value: mixLine),
+          _InfoLine(label: '혼합', value: mixLine),
           const SizedBox(height: 14),
-          _InfoLine(icon: '⚖️', label: 'Range', value: rangeText),
+          _InfoLine(label: '범위', value: rangeText),
           const SizedBox(height: 14),
-          _InfoLine(icon: '🧮', label: '공식', value: formulaText),
+          _InfoLine(label: '계산', value: formulaText),
           if (hasAdditionalNote) ...[
             const SizedBox(height: 18),
             Text(
               additionalNote,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 18,
-                height: 1.5,
+                fontSize: 14,
+                height: 1.2,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF475467),
               ),
@@ -1456,10 +1544,14 @@ class NoteBoard extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             resultDetail,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 17,
+              fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: resultError ? const Color(0xFFC12828) : const Color(0xFF475467),
+              color: resultError
+                  ? const Color(0xFFC12828)
+                  : const Color(0xFF475467),
             ),
           ),
         ],
@@ -1469,9 +1561,8 @@ class NoteBoard extends StatelessWidget {
 }
 
 class _InfoLine extends StatelessWidget {
-  const _InfoLine({required this.icon, required this.label, required this.value});
+  const _InfoLine({required this.label, required this.value});
 
-  final String icon;
   final String label;
   final String value;
 
@@ -1480,29 +1571,26 @@ class _InfoLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Text(icon, style: const TextStyle(fontSize: 28)),
-        ),
-        const SizedBox(width: 14),
         SizedBox(
-          width: 84,
+          width: 50,
           child: Text(
             label,
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 14,
               fontWeight: FontWeight.w900,
               color: Color(0xFF101828),
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 16,
-              height: 1.4,
+              fontSize: 12,
+              height: 1.1,
               fontWeight: FontWeight.w700,
               color: Color(0xFF667085),
             ),
@@ -1534,7 +1622,8 @@ class _EditorField extends StatelessWidget {
         controller: controller,
         keyboardType: keyboardType,
         validator: (value) {
-          if ((label == '최소 용량 (선택)' || label == '최대 용량 (선택)') || value == null) return null;
+          if ((label == '최소 용량 (선택)' || label == '최대 용량 (선택)') || value == null)
+            return null;
           if (value.trim().isEmpty) return '$label 입력';
           return null;
         },
@@ -1564,7 +1653,8 @@ InputDecoration editorDecoration(String label) {
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
     border: roundedInputBorder(radius: 18),
     enabledBorder: roundedInputBorder(radius: 18),
-    focusedBorder: roundedInputBorder(color: const Color(0xFF8FD5F7), radius: 18),
+    focusedBorder:
+        roundedInputBorder(color: const Color(0xFF8FD5F7), radius: 18),
   );
 }
 
@@ -1755,7 +1845,8 @@ double calculateRate({
 }) {
   final timeMultiplier = timeUnitRateFactor(preset.timeUnit);
   final weightFactor = preset.useWeight ? weight : 1.0;
-  return (dose * weightFactor * timeMultiplier * preset.volumeMl) / preset.drugAmount;
+  return (dose * weightFactor * timeMultiplier * preset.volumeMl) /
+      preset.drugAmount;
 }
 
 double roundCalculatedRate(double value, DrugPreset preset) {
@@ -1773,7 +1864,6 @@ String formatCalculatedRate(double value, DrugPreset preset) {
 
   return value.toStringAsFixed(1);
 }
-
 
 String? validateDoseRange(double dose, DrugPreset preset) {
   if (preset.minDose != null && dose < preset.minDose!) {
@@ -1799,7 +1889,8 @@ String formatOptionalDose(double? value, String unit) {
 
 String presetDropdownLabel(String presetName) {
   final withoutDose = presetName.replaceAll(
-    RegExp(r'\s+\d+(?:\.\d+)?\s*(?:mg|mcg|iu)(?=\s*\(|$)', caseSensitive: false),
+    RegExp(r'\s+\d+(?:\.\d+)?\s*(?:mg|mcg|iu)(?=\s*\(|$)',
+        caseSensitive: false),
     '',
   );
   return withoutDose.replaceAllMapped(
@@ -1813,8 +1904,9 @@ String extractMixLine(String note, String drugName) {
   final lines = note.split('\n');
   for (final line in lines) {
     if (line.toLowerCase().contains('mix')) {
-      final mixBody = line.replaceFirst(RegExp(r'^mix\s*', caseSensitive: false), '');
-      return '$drugName: $mixBody';
+      final mixBody =
+          line.replaceFirst(RegExp(r'^mix\s*', caseSensitive: false), '');
+      return mixBody.trim();
     }
   }
   return lines.first;
@@ -1929,6 +2021,7 @@ bool shouldReplaceLegacyMicuPresets(List<DrugPreset> presets) {
   };
   const correctedNames = {
     'precedex',
+    'precedex(dexmedetomidine)',
     'remifentanil 1mg',
     'propofol 200mg',
     'sufentanil 50mcg',
@@ -1951,7 +2044,8 @@ bool shouldReplaceLegacyMicuPresets(List<DrugPreset> presets) {
     'cortisol 100mg',
   };
 
-  return (names.any(preExampleNames.contains) || names.any(previousMicuNames.contains)) &&
+  return (names.any(preExampleNames.contains) ||
+          names.any(previousMicuNames.contains)) &&
       !names.any(correctedNames.contains);
 }
 
@@ -2008,7 +2102,8 @@ List<DrugPreset> buildDrugPresetVariants({
         useWeight: useWeight,
         minDose: minDose,
         maxDose: maxDose,
-        note: 'Mix ${amountLabels[i]} + $diluent ${formatNumber(volumeMl)} mL\n$note',
+        note:
+            'Mix ${amountLabels[i]} + $diluent ${formatNumber(volumeMl)} mL\n$note',
       ),
   ];
 }
@@ -2016,7 +2111,7 @@ List<DrugPreset> buildDrugPresetVariants({
 List<DrugPreset> defaultMicuPresets() {
   return [
     buildDrugPreset(
-      name: 'precedex',
+      name: 'precedex(dexmedetomidine)',
       doseUnit: 'mcg/kg/hr',
       drugAmount: 400,
       drugUnit: 'mcg',
@@ -2049,7 +2144,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 10,
       maxDose: 40,
-      note: '원액사용 / 총량 400 mg (200 mg vial × 2) / 계산용 총부피 40 mL\nmin 10, max 40, 단독 route 사용, 12hr line change, 원액사용',
+      note:
+          '원액사용 / 총량 400 mg (200 mg vial × 2) / 계산용 총부피 40 mL\nmin 10, max 40, 단독 route 사용, 12hr line change, 원액사용',
     ),
     buildDrugPreset(
       name: 'sufentanil 50mcg',
@@ -2061,7 +2157,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 0.2,
       maxDose: 1,
-      note: 'Mix 200 mcg + 5DW 40 mL\n1 vial 50 mcg 기준 / 총량 200 mcg\nmin 0.2, max 1',
+      note:
+          'Mix 200 mcg + 5DW 40 mL\n1 vial 50 mcg 기준 / 총량 200 mcg\nmin 0.2, max 1',
     ),
     buildDrugPreset(
       name: 'rocuronium 50mg',
@@ -2073,7 +2170,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 0.2,
       maxDose: 1,
-      note: 'Mix 250 mg + 5DW 50 mL\n1 vial 50 mg 기준 / 총량 250 mg\nmin 0.2, max 1',
+      note:
+          'Mix 250 mg + 5DW 50 mL\n1 vial 50 mg 기준 / 총량 250 mg\nmin 0.2, max 1',
     ),
     buildDrugPreset(
       name: 'ketamine 250mg',
@@ -2085,7 +2183,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 0.2,
       maxDose: 4,
-      note: 'Mix 500 mg + 5DW 250 mL\n1 vial 250 mg 기준 / 총량 500 mg\nmin 0.2, max 4',
+      note:
+          'Mix 500 mg + 5DW 250 mL\n1 vial 250 mg 기준 / 총량 500 mg\nmin 0.2, max 4',
     ),
     buildDrugPreset(
       name: 'midazolam 15mg',
@@ -2096,7 +2195,8 @@ List<DrugPreset> defaultMicuPresets() {
       timeUnit: 'hr',
       useWeight: false,
       minDose: 0.2,
-      note: 'Mix 45 mg + 5DW 45 mL\n1 vial 15 mg 기준 / 총량 45 mg\nmin 0.2, max none',
+      note:
+          'Mix 45 mg + 5DW 45 mL\n1 vial 15 mg 기준 / 총량 45 mg\nmin 0.2, max none',
     ),
     buildDrugPreset(
       name: 'morphine 10mg',
@@ -2107,7 +2207,8 @@ List<DrugPreset> defaultMicuPresets() {
       timeUnit: 'hr',
       useWeight: false,
       minDose: 1,
-      note: 'Mix 50 mg + 5DW 50 mL\n1 vial 10 mg 기준 / 총량 50 mg\nmin 1, max none',
+      note:
+          'Mix 50 mg + 5DW 50 mL\n1 vial 10 mg 기준 / 총량 50 mg\nmin 1, max none',
     ),
     buildDrugPreset(
       name: 'norphin 4mg (central)',
@@ -2143,7 +2244,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: false,
       minDose: 0.02,
       maxDose: 0.1,
-      note: 'Mix 40 IU + 5DW 100 mL\n1 vial 20 IU 기준 / 총량 40 IU\nmin 0.02, max 0.1',
+      note:
+          'Mix 40 IU + 5DW 100 mL\n1 vial 20 IU 기준 / 총량 40 IU\nmin 0.02, max 0.1',
     ),
     buildDrugPreset(
       name: 'epinephrine 1mg',
@@ -2155,7 +2257,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 0.02,
       maxDose: 0.7,
-      note: 'Mix 10 mg + 5DW 100 mL\n1 vial 1 mg 기준 / 총량 10 mg\nmin 0.02, max 0.7',
+      note:
+          'Mix 10 mg + 5DW 100 mL\n1 vial 1 mg 기준 / 총량 10 mg\nmin 0.02, max 0.7',
     ),
     buildDrugPreset(
       name: 'dopamine',
@@ -2215,7 +2318,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 50,
       maxDose: 300,
-      note: 'Mix 2500 mg + 5DW 250 mL\nmin 50, max 300, 250-500mcg/kg loading (1min 이상)',
+      note:
+          'Mix 2500 mg + 5DW 250 mL\nmin 50, max 300, 250-500mcg/kg loading (1min 이상)',
     ),
     buildDrugPreset(
       name: 'diltiazem 50mg',
@@ -2227,7 +2331,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: false,
       minDose: 5,
       maxDose: 50,
-      note: 'Mix 100 mg + 5DW 100 mL\n1 vial 50 mg 기준 / 총량 100 mg\nmin 5, max 50',
+      note:
+          'Mix 100 mg + 5DW 100 mL\n1 vial 50 mg 기준 / 총량 100 mg\nmin 5, max 50',
     ),
     buildDrugPreset(
       name: 'amiodarone 150mg',
@@ -2237,7 +2342,8 @@ List<DrugPreset> defaultMicuPresets() {
       volumeMl: 500,
       timeUnit: 'min',
       useWeight: false,
-      note: 'Mix 900 mg + 5DW 500 mL\n1 vial 150 mg 기준 / 총량 900 mg\n1mg/min 6hr, 0.5mg/min 18hr, 150-300mg loading (10min 이상)',
+      note:
+          'Mix 900 mg + 5DW 500 mL\n1 vial 150 mg 기준 / 총량 900 mg\n1mg/min 6hr, 0.5mg/min 18hr, 150-300mg loading (10min 이상)',
     ),
     buildDrugPreset(
       name: 'lidocaine 400mg',
@@ -2249,7 +2355,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: false,
       minDose: 0.5,
       maxDose: 4,
-      note: 'Mix 1600 mg + 5DW 200 mL\n1 vial 400 mg 기준 / 총량 1600 mg\nmin 0.5, max 4',
+      note:
+          'Mix 1600 mg + 5DW 200 mL\n1 vial 400 mg 기준 / 총량 1600 mg\nmin 0.5, max 4',
     ),
     buildDrugPreset(
       name: 'isoproterenol 0.2mg',
@@ -2273,7 +2380,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 0.25,
       maxDose: 0.75,
-      note: 'Mix 50 mg + 5DW 200 mL\n1 vial 10 mg 기준 / 총량 50 mg\nmin 0.25, max 0.75, 50mcg/kg loading (10min)',
+      note:
+          'Mix 50 mg + 5DW 200 mL\n1 vial 10 mg 기준 / 총량 50 mg\nmin 0.25, max 0.75, 50mcg/kg loading (10min)',
     ),
     buildDrugPreset(
       name: 'heparin',
@@ -2296,7 +2404,8 @@ List<DrugPreset> defaultMicuPresets() {
       useWeight: true,
       minDose: 0.5,
       maxDose: 10,
-      note: 'Mix 20 mg + 5DW 100 mL\n1 vial 10 mg 기준 / 총량 20 mg\nmin 0.5, max 10',
+      note:
+          'Mix 20 mg + 5DW 100 mL\n1 vial 10 mg 기준 / 총량 20 mg\nmin 0.5, max 10',
     ),
     buildDrugPreset(
       name: 'pantoprazole 40mg',
@@ -2316,161 +2425,710 @@ List<DrugPreset> defaultMicuPresets() {
       volumeMl: 200,
       timeUnit: 'day',
       useWeight: false,
-      note: 'Mix 200 mg + 5DW 200 mL\n1 vial 100 mg 기준 / 총량 200 mg\n200mg/day 일반적으로 사용',
+      note:
+          'Mix 200 mg + 5DW 200 mL\n1 vial 100 mg 기준 / 총량 200 mg\n200mg/day 일반적으로 사용',
     ),
   ];
 }
 
 final List<DepartmentPreset> defaultDepartments = [
-      DepartmentPreset(
-        id: 'micu',
-        label: 'MICU',
-        icon: '🫁',
-        description: '내과계 중환자실',
-        presets: defaultMicuPresets(),
+  DepartmentPreset(
+    id: 'micu',
+    label: 'MICU',
+    icon: '🫁',
+    description: '내과계 중환자실',
+    presets: defaultMicuPresets(),
+  ),
+  DepartmentPreset(
+    id: 'sicu',
+    label: 'SICU',
+    icon: '🩺',
+    description: '외과계 중환자실',
+    presets: [
+      buildDrugPreset(
+        name: 'amiodarone',
+        doseUnit: 'mg/min',
+        drugAmount: 450,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: false,
+        note: 'Mix 450 mg + 5DW 250 mL',
       ),
-      DepartmentPreset(
-        id: 'sicu',
-        label: 'SICU',
-        icon: '🩺',
-        description: '외과계 중환자실',
-        presets: [
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Fentanyl',
-            doseUnit: 'mcg/hr',
-            minDose: 25,
-            maxDose: 200,
-            drugAmount: 1000,
-            drugUnit: 'mcg',
-            volumeMl: 50,
-            timeUnit: 'hr',
-            useWeight: false,
-            note: 'Mix 1000 mcg + NS 50 mL\n진정 점수와 호흡수 함께 확인',
-          ),
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Nicardipine',
-            doseUnit: 'mg/hr',
-            minDose: 1,
-            maxDose: 15,
-            drugAmount: 20,
-            drugUnit: 'mg',
-            volumeMl: 100,
-            timeUnit: 'hr',
-            useWeight: false,
-            note: 'Mix 20 mg + NS 100 mL\n혈압 변화 빠르므로 단계적 증량',
-          ),
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Heparin',
-            doseUnit: 'units/hr',
-            minDose: 500,
-            maxDose: 2000,
-            drugAmount: 25000,
-            drugUnit: 'units',
-            volumeMl: 50,
-            timeUnit: 'hr',
-            useWeight: false,
-            note: 'Mix 25000 units + NS 50 mL\nPTT 또는 anti-Xa 프로토콜 확인',
-          ),
-        ],
+      buildDrugPreset(
+        name: 'esmolol',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 2500,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 50,
+        maxDose: 200,
+        note: 'Mix 2500 mg + NS 250 mL',
       ),
-      DepartmentPreset(
-        id: 'eicu2',
-        label: 'EICU2',
-        icon: '⚡',
-        description: '응급 중환자실2',
-        presets: [
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Adrenaline',
-            doseUnit: 'mcg/kg/min',
-            minDose: 0.01,
-            maxDose: 0.5,
-            drugAmount: 4,
-            drugUnit: 'mg',
-            volumeMl: 50,
-            timeUnit: 'min',
-            useWeight: true,
-            note: 'Mix 4 mg + D5W 50 mL\n부정맥 및 말초허혈 주의',
-          ),
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Amiodarone',
-            doseUnit: 'mg/hr',
-            minDose: 0.5,
-            maxDose: 1,
-            drugAmount: 150,
-            drugUnit: 'mg',
-            volumeMl: 100,
-            timeUnit: 'hr',
-            useWeight: false,
-            note: 'Loading dose 후 유지주입으로 전환\nQT prolongation 확인',
-          ),
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Dopamine',
-            doseUnit: 'mcg/kg/min',
-            minDose: 2,
-            maxDose: 20,
-            drugAmount: 200,
-            drugUnit: 'mg',
-            volumeMl: 50,
-            timeUnit: 'min',
-            useWeight: true,
-            note: 'Mix 200 mg + NS 50 mL\n빈맥과 혈압 반응 모니터링',
-          ),
-        ],
+      buildDrugPreset(
+        name: 'lidocaine',
+        doseUnit: 'mg/hr',
+        drugAmount: 1600,
+        drugUnit: 'mg',
+        volumeMl: 120,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 60,
+        maxDose: 240,
+        note: 'Mix 1600 mg + NS 120 mL',
       ),
-      DepartmentPreset(
-        id: 'ncu',
-        label: 'NCU',
-        icon: '🧠',
-        description: '신경계 중환자실',
-        presets: [
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Nimodipine',
-            doseUnit: 'mg/hr',
-            minDose: 1,
-            maxDose: 2,
-            drugAmount: 10,
-            drugUnit: 'mg',
-            volumeMl: 50,
-            timeUnit: 'hr',
-            useWeight: false,
-            note: '저혈압 시 감량 고려\n혈압 유지 목표 확인',
-          ),
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Propofol',
-            doseUnit: 'mg/kg/hr',
-            minDose: 0.3,
-            maxDose: 3,
-            drugAmount: 500,
-            drugUnit: 'mg',
-            volumeMl: 50,
-            timeUnit: 'hr',
-            useWeight: true,
-            note: '중성지방, 혈압, 진정 점수 모니터링\n장시간 고용량 사용 주의',
-          ),
-          DrugPreset(
-            id: uniqueId(),
-            name: 'Midazolam',
-            doseUnit: 'mg/hr',
-            minDose: 1,
-            maxDose: 10,
-            drugAmount: 50,
-            drugUnit: 'mg',
-            volumeMl: 50,
-            timeUnit: 'hr',
-            useWeight: false,
-            note: 'Loading dose 여부는 상황에 따라 판단\n호흡억제 및 진정 깊이 평가',
-          ),
-        ],
+      buildDrugPreset(
+        name: 'labetalol',
+        doseUnit: 'mg/hr',
+        drugAmount: 500,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 2,
+        maxDose: 10,
+        note: 'Mix 500 mg + NS 250 mL',
       ),
-    ];
+      buildDrugPreset(
+        name: 'nicardipine (TS)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 0.5,
+        maxDose: 3,
+        note: 'Mix 50 mg + NS 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'nicardipine (타과)',
+        doseUnit: 'mg/hr',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 0.5,
+        maxDose: 3,
+        note: 'Mix 50 mg + NS 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'nitroglycerin',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.5,
+        maxDose: 3,
+        note: 'Mix 50 mg + NS 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'diltiazem',
+        doseUnit: 'mg/hr',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: false,
+        note: 'Mix 50 mg + NS 50 mL',
+      ),
+      buildDrugPreset(
+        name: 'norepinephrine (TS)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 12,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.02,
+        maxDose: 0.3,
+        note: 'Mix 12 mg + 5DW 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'norepinephrine (타과)',
+        doseUnit: 'mcg/min',
+        drugAmount: 12,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 2,
+        maxDose: 64,
+        note: 'Mix 12 mg + 5DW 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'epinephrine',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 6,
+        drugUnit: 'mg',
+        volumeMl: 100,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.02,
+        maxDose: 0.3,
+        note: 'Mix 6 mg + 5DW 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'milrinone',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.5,
+        maxDose: 1,
+        note: 'Mix 50 mg + NS 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'dopamix',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 400,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 1,
+        maxDose: 20,
+        note: 'Mix 400 mg + 5DW 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'dobutamix',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 500,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 1,
+        maxDose: 20,
+        note: 'Mix 500 mg + 5DW 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'vasopressin',
+        doseUnit: 'iu/min',
+        drugAmount: 20,
+        drugUnit: 'iu',
+        volumeMl: 20,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 0.02,
+        maxDose: 0.06,
+        note: 'Mix 20 iu + 5DW 20 mL',
+      ),
+      buildDrugPreset(
+        name: 'precedex',
+        doseUnit: 'mcg/kg/hr',
+        drugAmount: 400,
+        drugUnit: 'mcg',
+        volumeMl: 100,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.2,
+        maxDose: 1,
+        note: 'Mix 400 mcg + NS 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'remifentanil',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 2,
+        drugUnit: 'mg',
+        volumeMl: 40,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.02,
+        maxDose: 2,
+        note: 'Mix 2 mg + NS 40 mL',
+      ),
+      buildDrugPreset(
+        name: 'vecuronium (TS)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: true,
+        note: 'Mix 50 mg + NS 50 mL',
+      ),
+      buildDrugPreset(
+        name: 'vecuronium (타과)',
+        doseUnit: 'mg/hr',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: false,
+        note: 'Mix 50 mg + NS 50 mL',
+      ),
+      buildDrugPreset(
+        name: 'rocuronium (TS)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 500,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 5,
+        maxDose: 10,
+        note: '원액 50 ml',
+      ),
+      buildDrugPreset(
+        name: 'rocuronium (NS)',
+        doseUnit: 'mg/kg/hr',
+        drugAmount: 500,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.3,
+        maxDose: 0.6,
+        note: '원액 50 ml',
+      ),
+      buildDrugPreset(
+        name: 'rocuronium (GS)',
+        doseUnit: 'mcg/kg/hr',
+        drugAmount: 500,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: true,
+        note: '원액 50 ml',
+      ),
+      buildDrugPreset(
+        name: 'midazolam (TS)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 45,
+        drugUnit: 'mg',
+        volumeMl: 45,
+        timeUnit: 'hr',
+        useWeight: true,
+        note: 'Mix 45 mg + NS 45 mL',
+      ),
+      buildDrugPreset(
+        name: 'midazolam (타과)',
+        doseUnit: 'mg/hr',
+        drugAmount: 45,
+        drugUnit: 'mg',
+        volumeMl: 45,
+        timeUnit: 'hr',
+        useWeight: false,
+        note: 'Mix 45 mg + NS 45 mL',
+      ),
+    ],
+  ),
+  DepartmentPreset(
+    id: 'eicu2',
+    label: 'EICU2',
+    icon: '⚡',
+    description: '응급 중환자실2',
+    presets: [
+      DrugPreset(
+        id: uniqueId(),
+        name: 'Adrenaline',
+        doseUnit: 'mcg/kg/min',
+        minDose: 0.01,
+        maxDose: 0.5,
+        drugAmount: 4,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'min',
+        useWeight: true,
+        note: 'Mix 4 mg + D5W 50 mL\n부정맥 및 말초허혈 주의',
+      ),
+      DrugPreset(
+        id: uniqueId(),
+        name: 'Amiodarone',
+        doseUnit: 'mg/hr',
+        minDose: 0.5,
+        maxDose: 1,
+        drugAmount: 150,
+        drugUnit: 'mg',
+        volumeMl: 100,
+        timeUnit: 'hr',
+        useWeight: false,
+        note: 'Loading dose 후 유지주입으로 전환\nQT prolongation 확인',
+      ),
+      DrugPreset(
+        id: uniqueId(),
+        name: 'Dopamine',
+        doseUnit: 'mcg/kg/min',
+        minDose: 2,
+        maxDose: 20,
+        drugAmount: 200,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'min',
+        useWeight: true,
+        note: 'Mix 200 mg + NS 50 mL\n빈맥과 혈압 반응 모니터링',
+      ),
+    ],
+  ),
+  DepartmentPreset(
+    id: 'ncu',
+    label: 'NCU',
+    icon: '🧠',
+    description: '신경계 중환자실',
+    presets: [
+      buildDrugPreset(
+        name: 'precedex',
+        doseUnit: 'mcg/kg/hr',
+        drugAmount: 400,
+        drugUnit: 'mcg',
+        volumeMl: 100,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.2,
+        maxDose: 0.7,
+        note: 'Mix 400 mcg + NS 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'remifentanil',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 2,
+        drugUnit: 'mg',
+        volumeMl: 40,
+        timeUnit: 'min',
+        useWeight: true,
+        minDose: 0.02,
+        maxDose: 0.12,
+        note: 'Mix 2 mg + NS/5DW 40 mL',
+      ),
+      buildDrugPreset(
+        name: 'propofol',
+        doseUnit: 'mg/kg/hr',
+        drugAmount: 400,
+        drugUnit: 'mg',
+        volumeMl: 40,
+        timeUnit: 'hr',
+        useWeight: true,
+        note: '원액 40 mL',
+      ),
+      buildDrugPreset(
+        name: 'rocuronium',
+        doseUnit: 'mg/kg/hr',
+        drugAmount: 500,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.2,
+        maxDose: 0.6,
+        note: '원액 50 mL',
+      ),
+      buildDrugPreset(
+        name: 'ketamine',
+        doseUnit: 'mg/kg/hr',
+        drugAmount: 1000,
+        drugUnit: 'mg',
+        volumeMl: 500,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 1,
+        maxDose: 7.5,
+        note: 'Mix 1000 mg + NS/5DW 500 mL',
+      ),
+      buildDrugPreset(
+        name: 'midazolam',
+        doseUnit: 'mg/hr',
+        drugAmount: 45,
+        drugUnit: 'mg',
+        volumeMl: 45,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 0.1,
+        maxDose: 10,
+        note: 'Mix 45 mg + NS/5DW 45 mL',
+      ),
+      buildDrugPreset(
+        name: 'midazolam (status epilepsy)',
+        doseUnit: 'mg/kg/hr',
+        drugAmount: 45,
+        drugUnit: 'mg',
+        volumeMl: 45,
+        timeUnit: 'hr',
+        useWeight: true,
+        minDose: 0.2,
+        maxDose: 2.9,
+        note: 'Mix 45 mg + NS/5DW 45 mL',
+      ),
+      buildDrugPreset(
+        name: 'remimazolam',
+        doseUnit: 'mg/kg/hr',
+        drugAmount: 20,
+        drugUnit: 'mg',
+        volumeMl: 20,
+        timeUnit: 'hr',
+        useWeight: true,
+        note: 'Mix 20 mg + NS 20 mL',
+      ),
+      buildDrugPreset(
+        name: 'norepinephrine (central)',
+        doseUnit: 'mcg/min',
+        drugAmount: 6,
+        drugUnit: 'mg',
+        volumeMl: 100,
+        timeUnit: 'min',
+        useWeight: false,
+        minDose: 1,
+        maxDose: 64,
+        note: 'Mix 6 mg + NS/5DW 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'norepinephrine (pph)',
+        doseUnit: 'mcg/min',
+        drugAmount: 3,
+        drugUnit: 'mg',
+        volumeMl: 100,
+        timeUnit: 'min',
+        useWeight: false,
+        minDose: 1,
+        maxDose: 64,
+        note: 'Mix 3 mg + NS/5DW 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'vasopressin',
+        doseUnit: 'iu/min',
+        drugAmount: 40,
+        drugUnit: 'iu',
+        volumeMl: 100,
+        timeUnit: 'min',
+        useWeight: false,
+        minDose: 0.01,
+        maxDose: 0.1,
+        note: 'Mix 40 iu + 5DW 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'dopamix',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 400,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'min',
+        useWeight: true,
+        minDose: 2,
+        maxDose: 30,
+        note: 'Premix (1bag) 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'dopamine (volume제한)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 800,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'min',
+        useWeight: true,
+        note: 'Mix 800 mg + 5DW 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'dobutamix',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 500,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'min',
+        useWeight: true,
+        minDose: 2,
+        maxDose: 30,
+        note: 'Premix (1bag) 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'dobutamine (volume제한)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 1000,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'min',
+        useWeight: true,
+        note: 'Mix 1000 mg + 5DW 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'epinephrine',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 2,
+        drugUnit: 'mg',
+        volumeMl: 100,
+        timeUnit: 'min',
+        useWeight: true,
+        minDose: 0.01,
+        maxDose: 0.4,
+        note: 'Mix 2 mg + NS/5DW 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'nicardipine',
+        doseUnit: 'mg/hr',
+        drugAmount: 40,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 1.5,
+        maxDose: 18,
+        note: 'Mix 40 mg + NS/5DW 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'nicardipine (volume제한)',
+        doseUnit: 'mg/hr',
+        drugAmount: 100,
+        drugUnit: 'mg',
+        volumeMl: 200,
+        timeUnit: 'hr',
+        useWeight: false,
+        note: 'Mix 100 mg + NS/5DW 200 mL',
+      ),
+      buildDrugPreset(
+        name: 'nitroglycerin',
+        doseUnit: 'mcg/min',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'min',
+        useWeight: false,
+        minDose: 10,
+        maxDose: 50,
+        note: 'Mix 50 mg + NS/5DW 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'nitroglycerin (TS)',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'min',
+        useWeight: true,
+        minDose: 0.25,
+        maxDose: 0.5,
+        note: 'Mix 50 mg + NS/5DW 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'esmolol',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 2500,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'min',
+        useWeight: true,
+        minDose: 50,
+        maxDose: 200,
+        note: 'Mix 2500 mg + NS/5DW 250 mL\n비고: 0.25~0.5mg/kg over 2min loading',
+      ),
+      buildDrugPreset(
+        name: 'diltiazem',
+        doseUnit: 'mg/hr',
+        drugAmount: 50,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 5,
+        maxDose: 15,
+        note: 'Mix 50 mg + NS/5DW 50 mL\n비고: 0.25mg/kg loading',
+      ),
+      buildDrugPreset(
+        name: 'amiodarone',
+        doseUnit: 'mg/min',
+        drugAmount: 900,
+        drugUnit: 'mg',
+        volumeMl: 500,
+        timeUnit: 'min',
+        useWeight: false,
+        minDose: 0.5,
+        maxDose: 1,
+        note: 'Mix 900 mg + 5DW 500 mL\n1mg/min 6hrs, 0.5mg/min 18hrs',
+      ),
+      buildDrugPreset(
+        name: 'labetalol',
+        doseUnit: 'mg/hr',
+        drugAmount: 100,
+        drugUnit: 'mg',
+        volumeMl: 100,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 2,
+        maxDose: 120,
+        note: 'Mix 100 mg + NS/5DW 100 mL',
+      ),
+      buildDrugPreset(
+        name: 'heparin',
+        doseUnit: 'iu/kg/hr',
+        drugAmount: 25000,
+        drugUnit: 'iu',
+        volumeMl: 500,
+        timeUnit: 'hr',
+        useWeight: true,
+        note: 'Mix 25000 iu + NS/5DW 500 mL',
+      ),
+      buildDrugPreset(
+        name: 'heparin (volume제한)',
+        doseUnit: 'iu/kg/hr',
+        drugAmount: 25000,
+        drugUnit: 'iu',
+        volumeMl: 250,
+        timeUnit: 'hr',
+        useWeight: true,
+        note: 'Mix 25000 iu + NS/5DW 250 mL',
+      ),
+      buildDrugPreset(
+        name: 'pantoprazole',
+        doseUnit: 'mg/hr',
+        drugAmount: 80,
+        drugUnit: 'mg',
+        volumeMl: 80,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 8,
+        maxDose: 8,
+        note: 'Mix 80 mg + NS/5DW 80 mL\n8mg/hr 72hrs',
+      ),
+      buildDrugPreset(
+        name: 'renal cocktail',
+        doseUnit: 'mg/hr',
+        drugAmount: 100,
+        drugUnit: 'mg',
+        volumeMl: 40,
+        timeUnit: 'hr',
+        useWeight: false,
+        minDose: 2,
+        maxDose: 40,
+        note: 'Mix 100 mg + 20% albumin (또는 20% mannitol) 40 mL',
+      ),
+      buildDrugPreset(
+        name: 'MgSO4 (SAH)',
+        doseUnit: 'g/day',
+        drugAmount: 2,
+        drugUnit: 'g',
+        volumeMl: 20,
+        timeUnit: 'day',
+        useWeight: false,
+        note: '원액 20 mL',
+      ),
+      buildDrugPreset(
+        name: 'MgSO4 (TTM)',
+        doseUnit: 'g/hr',
+        drugAmount: 2,
+        drugUnit: 'g',
+        volumeMl: 50,
+        timeUnit: 'hr',
+        useWeight: false,
+        note: 'Mix 2 g + NS/5DW 50 mL',
+      ),
+      buildDrugPreset(
+        name: 'tirofiban',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 12.5,
+        drugUnit: 'mg',
+        volumeMl: 250,
+        timeUnit: 'min',
+        useWeight: true,
+        note: 'Mix 12.5 mg + NS 250 mL',
+      ),
+    ],
+  ),
+];
 
 class DepartmentPreset {
   DepartmentPreset({
