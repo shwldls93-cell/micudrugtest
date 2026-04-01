@@ -87,7 +87,27 @@ bool shouldReplaceLegacyMicuPresets(List<DrugPreset> presets) {
       !names.any(correctedNames.contains);
 }
 
+bool _isLegacyMicuRocuroniumPreset(DrugPreset preset) {
+  return preset.name.trim().toLowerCase() == 'rocuronium 50mg' &&
+      preset.doseUnit.trim().toLowerCase() == 'mcg/kg/hr';
+}
+
+bool shouldReplaceLegacyMicuRocuroniumPreset(List<DrugPreset> presets) {
+  return presets.any(_isLegacyMicuRocuroniumPreset);
+}
+
+List<DrugPreset> replaceLegacyMicuRocuroniumPreset(List<DrugPreset> presets) {
+  return presets.map((preset) {
+    if (_isLegacyMicuRocuroniumPreset(preset)) {
+      return buildMicuRocuroniumPreset(id: preset.id);
+    }
+
+    return preset.copy();
+  }).toList();
+}
+
 DrugPreset buildDrugPreset({
+  String? id,
   required String name,
   required String doseUnit,
   required double drugAmount,
@@ -100,7 +120,7 @@ DrugPreset buildDrugPreset({
   double? maxDose,
 }) {
   return DrugPreset(
-    id: uniqueId(),
+    id: id ?? uniqueId(),
     name: name,
     doseUnit: doseUnit,
     minDose: minDose,
@@ -126,6 +146,22 @@ String buildPresetNote({
     if (max != null && max.trim().isNotEmpty) 'Max $max',
     if (extra != null && extra.trim().isNotEmpty) extra.trim(),
   ].join('\n');
+}
+
+DrugPreset buildMicuRocuroniumPreset({String? id}) {
+  return buildDrugPreset(
+    id: id,
+    name: 'rocuronium 50mg',
+    doseUnit: 'mg/kg/hr',
+    drugAmount: 250,
+    drugUnit: 'mg',
+    volumeMl: 50,
+    timeUnit: 'hr',
+    useWeight: true,
+    minDose: 0.2,
+    maxDose: 1,
+    note: 'Mix 250 mg + 5DW 50 mL\n1 vial 50 mg 기준 / 총량 250 mg\nmin 0.2, max 1',
+  );
 }
 
 bool _isLegacyNcuMgso4Name(String name) {
@@ -632,19 +668,7 @@ List<DrugPreset> defaultMicuPresets() {
       note:
           'Mix 200 mcg + 5DW 40 mL\n1 vial 50 mcg 기준 / 총량 200 mcg\nmin 0.2, max 1',
     ),
-    buildDrugPreset(
-      name: 'rocuronium 50mg',
-      doseUnit: 'mcg/kg/hr',
-      drugAmount: 250000,
-      drugUnit: 'mcg',
-      volumeMl: 50,
-      timeUnit: 'hr',
-      useWeight: true,
-      minDose: 0.2,
-      maxDose: 1,
-      note:
-          'Mix 250 mg + 5DW 50 mL\n1 vial 50 mg 기준 / 총량 250 mg\nmin 0.2, max 1',
-    ),
+    buildMicuRocuroniumPreset(),
     buildDrugPreset(
       name: 'ketamine 250mg',
       doseUnit: 'mcg/kg/hr',

@@ -112,6 +112,47 @@ void main() {
       expect(migrated.single.doseUnit, 'mcg/kg/hr');
     });
 
+    test('uses the updated MICU rocuronium preset values', () {
+      final preset = defaultMicuPresets().firstWhere(
+        (preset) => preset.name == 'rocuronium 50mg',
+      );
+
+      expect(preset.doseUnit, 'mg/kg/hr');
+      expect(preset.drugAmount, 250);
+      expect(preset.drugUnit, 'mg');
+      expect(preset.volumeMl, 50);
+      expect(preset.timeUnit, 'hr');
+      expect(preset.useWeight, isTrue);
+      expect(preset.minDose, 0.2);
+      expect(preset.maxDose, 1);
+    });
+
+    test('migrates legacy MICU rocuronium preset units', () {
+      final migrated = replaceLegacyMicuRocuroniumPreset([
+        DrugPreset(
+          id: 'legacy-rocuronium',
+          name: 'rocuronium 50mg',
+          doseUnit: 'mcg/kg/hr',
+          drugAmount: 250000,
+          drugUnit: 'mcg',
+          volumeMl: 50,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.2,
+          maxDose: 1,
+          note: 'old note',
+        ),
+      ]);
+
+      expect(migrated, hasLength(1));
+      expect(migrated.single.id, 'legacy-rocuronium');
+      expect(migrated.single.doseUnit, 'mg/kg/hr');
+      expect(migrated.single.drugAmount, 250);
+      expect(migrated.single.drugUnit, 'mg');
+      expect(migrated.single.minDose, 0.2);
+      expect(migrated.single.maxDose, 1);
+    });
+
     test('uses the updated EICU2 preset list', () {
       final presets = defaultEicu2Presets();
       final precedex =

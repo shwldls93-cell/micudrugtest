@@ -158,6 +158,12 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
               preset_data.shouldReplaceLegacyMicuPresets(savedList)) {
             savedList = <DrugPreset>[];
           }
+          if (department.id == 'micu' &&
+              preset_data.shouldReplaceLegacyMicuRocuroniumPreset(savedList)) {
+            savedList = preset_data.replaceLegacyMicuRocuroniumPreset(
+              savedList,
+            );
+          }
           if (department.id == 'eicu2' &&
               preset_data.shouldReplaceLegacyEicu2Presets(savedList)) {
             savedList = preset_data.replaceLegacyEicu2Presets(savedList);
@@ -356,9 +362,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
       setState(() {
         _resultValue = formatCalculatedRate(roundedRate, preset);
-        _resultDetail = rangeWarning != null
-            ? '$rangeWarning 주입용량확인'
-            : '';
+        _resultDetail = rangeWarning != null ? '$rangeWarning 주입용량확인' : '';
         _resultError = rangeWarning != null;
         _resultDoseWarning = rangeWarning != null;
       });
