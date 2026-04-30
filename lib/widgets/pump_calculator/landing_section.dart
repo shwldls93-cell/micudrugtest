@@ -41,32 +41,28 @@ class _LandingSectionBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return ThemedBoard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const CloudHeader(
-            titleSize: 44,
-            subtitle: '부서 선택 후 바로 약물 속도를 계산할 수 있어요',
+            titleSize: 62,
           ),
           const SizedBox(height: 20),
           const _PickBanner(),
-          const SizedBox(height: 18),
-          SizedBox(
-            height: 198,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: preset_data.defaultDepartments.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final department = preset_data.defaultDepartments[index];
-                return DepartmentCard(
+          const SizedBox(height: 28),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 18,
+            children: [
+              for (final department in preset_data.defaultDepartments)
+                DepartmentCard(
                   department: department,
                   selected: selectedDepartmentId == department.id,
                   onTap: () => onSelectDepartment(department.id),
-                );
-              },
-            ),
+                ),
+            ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 22),
           SelectedChip(label: selectedDepartmentLabel),
         ],
       ),
@@ -91,74 +87,28 @@ class DepartmentCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Container(
-          width: 154,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFEAF7FD) : const Color(0xFFFFFFFF),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(
-              color:
-                  selected ? const Color(0xFF8FD5F7) : const Color(0xFFE5EDF3),
-              width: selected ? 1.8 : 1.0,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x100F6784),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: selected
-                        ? [const Color(0xFF8FD5F7), const Color(0xFFFFD1DC)]
-                        : [const Color(0xFFF3F8FB), const Color(0xFFFFF1F5)],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                alignment: Alignment.center,
-                child:
-                    Text(department.icon, style: const TextStyle(fontSize: 26)),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                department.label,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF163647),
-                ),
-              ),
-              const Spacer(),
-              const SizedBox(height: 12),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? const Color(0xFFD9F0FB)
-                      : const Color(0xFFF2F5F8),
-                  borderRadius: BorderRadius.circular(999),
-                ),
+        child: SizedBox(
+          width: 84,
+          height: 98,
+          child: ScallopedCard(
+            selected: selected,
+            padding: const EdgeInsets.fromLTRB(8, 18, 8, 14),
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
                 child: Text(
-                  selected ? '선택됨' : '탭해서 선택',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
+                  department.label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.w900,
+                    color: selected ? const Color(0xFF0F6784) : snoobiInk,
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -177,15 +127,16 @@ class SelectedChip extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5EDF3)),
+        color: snoobiPaper,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: snoobiInk, width: 1.3),
       ),
       child: Text(
         label,
+        textAlign: TextAlign.center,
         style: const TextStyle(
           fontWeight: FontWeight.w900,
-          color: Color(0xFF344054),
+          color: snoobiInk,
         ),
       ),
     );
@@ -198,27 +149,33 @@ class _PickBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFE7EF),
+        color: snoobiCream,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: snoobiInk, width: 1.5),
       ),
       child: const Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.local_hospital_rounded,
-            color: Color(0xFF0F6784),
-            size: 18,
-          ),
-          SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '오늘 근무 부서를 먼저 선택해 주세요',
+          Flexible(
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: '당신의 부서를 '),
+                  TextSpan(
+                    text: 'pick',
+                    style: TextStyle(color: snoobiRed),
+                  ),
+                  TextSpan(text: ' 해주세요!'),
+                ],
+              ),
+              textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF293056),
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: snoobiInk,
               ),
             ),
           ),

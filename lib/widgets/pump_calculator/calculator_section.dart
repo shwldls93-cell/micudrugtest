@@ -75,178 +75,162 @@ class CalculatorSection extends StatelessWidget {
       child: Column(
         children: [
           CloudHeader(
-            titleSize: 34,
-            subtitle: '입력값만 넣으면 infusion pump 속도를 바로 확인할 수 있어요',
+            titleSize: 62,
             footer: CurrentDepartmentBox(
               title: departmentLabel,
               onTap: onChangeDepartment,
             ),
           ),
-          const SizedBox(height: 16),
-          DecoratedBox(
-            decoration:
-                roundedDecoration(color: const Color(0xFFFFFFFF), radius: 32),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: calculatorFormKey,
-                child: Column(
-                  children: [
-                    CalculatorRow(
-                      label: '약물선택',
-                      child: DropdownButtonFormField<String>(
-                        key: ValueKey(selectedPresetId),
-                        initialValue: selectedPresetId,
-                        isExpanded: true,
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          size: 28,
-                          color: Color(0xFF0F6784),
-                        ),
-                        decoration: rowDecoration(),
-                        items: presets
-                            .map(
-                              (preset) => DropdownMenuItem(
-                                value: preset.id,
-                                child: _PresetDropdownLabel(
-                                  text: selectedPresetLabel(preset.name),
-                                  detail: selectedPresetDetail(preset.name),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        selectedItemBuilder: (context) => presets
-                            .map(
-                              (preset) => _PresetDropdownLabel(
-                                text: selectedPresetLabel(preset.name),
-                                scaleToFit: true,
-                              ),
-                            )
-                            .toList(),
-                        onChanged: onPresetChanged,
-                      ),
+          const HandDrawnDivider(),
+          Form(
+            key: calculatorFormKey,
+            child: Column(
+              children: [
+                CalculatorRow(
+                  label: '약물선택',
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey(selectedPresetId),
+                    initialValue: selectedPresetId,
+                    isExpanded: true,
+                    icon: const Icon(
+                      Icons.search_rounded,
+                      size: 24,
+                      color: snoobiInk,
                     ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: presetSearchController,
-                      textInputAction: TextInputAction.search,
-                      onChanged: onPresetSearchChanged,
-                      onSubmitted: (_) {
-                        if (presetSearchResults.isNotEmpty) {
-                          onPresetSearchSelected(presetSearchResults.first.id);
-                        }
-                      },
-                      decoration: rowDecoration(hint: '검색해서 바로 약물 찾기').copyWith(
-                        prefixIcon: const Icon(
-                          Icons.search_rounded,
-                          color: Color(0xFF0F6784),
-                        ),
-                        suffixIcon: presetSearchQuery.trim().isEmpty
-                            ? null
-                            : IconButton(
-                                onPressed: onClearPresetSearch,
-                                icon: const Icon(Icons.close_rounded),
-                              ),
-                      ),
-                    ),
-                    if (presetSearchQuery.trim().isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      _PresetSearchResults(
-                        results: presetSearchResults,
-                        selectedPresetId: selectedPresetId,
-                        onSelected: onPresetSearchSelected,
-                      ),
-                    ],
-                    const SizedBox(height: 14),
-                    CalculatorRow(
-                      label: '몸무게',
-                      child: TextFormField(
-                        controller: weightController,
-                        enabled: preset?.useWeight ?? true,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: rowDecoration(hint: '몸무게 입력'),
-                        onChanged: (_) => onWeightChanged(),
-                      ),
-                      suffix: const UnitLabel('kg'),
-                    ),
-                    if (!(preset?.useWeight ?? true))
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, bottom: 2),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            '체중 불필요 약물입니다.',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF667085),
+                    decoration: rowDecoration(hint: '검색창 & 목록상자'),
+                    items: presets
+                        .map(
+                          (preset) => DropdownMenuItem(
+                            value: preset.id,
+                            child: _PresetDropdownLabel(
+                              text: selectedPresetLabel(preset.name),
+                              detail: selectedPresetDetail(preset.name),
                             ),
                           ),
-                        ),
-                      ),
-                    const SizedBox(height: 14),
-                    CalculatorRow(
-                      label: '주입용량',
-                      child: TextFormField(
-                        controller: doseController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: rowDecoration(hint: '용량 입력'),
-                        onChanged: (_) => onDoseChanged(),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                                ? '용량 입력'
-                                : double.tryParse(value.trim()) == null
-                                    ? '숫자 입력'
-                                    : null,
-                      ),
-                      suffix: UnitLabel(preset?.doseUnit ?? '약물단위'),
-                    ),
-                    const SizedBox(height: 14),
-                    CalculatorRow(
-                      label: '주입속도',
-                      child: ResultBox(
-                        value: resultValue,
-                        isWarning: resultDoseWarning,
-                      ),
-                      suffix: RateSuffix(showWarning: resultDoseWarning),
-                    ),
-                    const SizedBox(height: 18),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: OutlinedButton(
-                        onPressed: onResetPresets,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF0F6784),
-                          side: const BorderSide(color: Color(0xFFB8D8E6)),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 18,
+                        )
+                        .toList(),
+                    selectedItemBuilder: (context) => presets
+                        .map(
+                          (preset) => _PresetDropdownLabel(
+                            text: selectedPresetLabel(preset.name),
+                            scaleToFit: true,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                        ),
-                        child: const Text('현재 부서 기본값 복원'),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    _NoteBoard(
-                      mixLine: mixLine,
-                      rangeText: rangeText,
-                      formulaText: formulaText,
-                      additionalNote: preset == null
-                          ? ''
-                          : extractAdditionalNote(preset.note),
-                      resultDetail: resultDetail,
-                      resultError: resultError,
-                    ),
-                  ],
+                        )
+                        .toList(),
+                    onChanged: onPresetChanged,
+                  ),
                 ),
-              ),
+                TextField(
+                  controller: presetSearchController,
+                  textInputAction: TextInputAction.search,
+                  onChanged: onPresetSearchChanged,
+                  onSubmitted: (_) {
+                    if (presetSearchResults.isNotEmpty) {
+                      onPresetSearchSelected(presetSearchResults.first.id);
+                    }
+                  },
+                  decoration: rowDecoration(hint: '약물명 빠른 검색').copyWith(
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: snoobiInk,
+                    ),
+                    suffixIcon: presetSearchQuery.trim().isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: onClearPresetSearch,
+                            icon: const Icon(Icons.close_rounded),
+                          ),
+                  ),
+                ),
+                if (presetSearchQuery.trim().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _PresetSearchResults(
+                    results: presetSearchResults,
+                    selectedPresetId: selectedPresetId,
+                    onSelected: onPresetSearchSelected,
+                  ),
+                ],
+                CalculatorRow(
+                  label: '몸무게',
+                  child: TextFormField(
+                    controller: weightController,
+                    enabled: preset?.useWeight ?? true,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: rowDecoration(hint: '몸무게 입력칸'),
+                    onChanged: (_) => onWeightChanged(),
+                  ),
+                  suffix: const UnitLabel('Kg'),
+                ),
+                if (!(preset?.useWeight ?? true))
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4, bottom: 2),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '체중 불필요 약물입니다.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF555555),
+                        ),
+                      ),
+                    ),
+                  ),
+                CalculatorRow(
+                  label: '주입용량',
+                  child: TextFormField(
+                    controller: doseController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: rowDecoration(hint: '용량 입력칸'),
+                    onChanged: (_) => onDoseChanged(),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                            ? '용량 입력'
+                            : double.tryParse(value.trim()) == null
+                                ? '숫자 입력'
+                                : null,
+                  ),
+                  suffix: UnitLabel(preset?.doseUnit ?? '약물단위'),
+                ),
+                CalculatorRow(
+                  label: '주입속도',
+                  child: ResultBox(
+                    value: resultValue,
+                    isWarning: resultDoseWarning,
+                  ),
+                  suffix: RateSuffix(showWarning: resultDoseWarning),
+                ),
+                const HandDrawnDivider(),
+                _NoteBoard(
+                  mixLine: mixLine,
+                  rangeText: rangeText,
+                  formulaText: formulaText,
+                  additionalNote:
+                      preset == null ? '' : extractAdditionalNote(preset.note),
+                  resultDetail: resultDetail,
+                  resultError: resultError,
+                ),
+                const SizedBox(height: 14),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton(
+                    onPressed: onResetPresets,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: snoobiInk,
+                      backgroundColor: snoobiCream,
+                      side: const BorderSide(color: snoobiInk, width: 1.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    child: const Text('기본값 복원'),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
@@ -344,9 +328,8 @@ class _PresetSearchResults extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFD9E4EA)),
+        color: snoobiPaper,
+        border: Border.all(color: snoobiInk, width: 1.4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -356,7 +339,7 @@ class _PresetSearchResults extends StatelessWidget {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF475467),
+              color: snoobiInk,
             ),
           ),
           if (results.isEmpty) ...[
@@ -411,10 +394,8 @@ class _PresetSearchResultTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? const Color(0xFFEAF7FD) : const Color(0xFFF9FBFD),
-      borderRadius: BorderRadius.circular(18),
+      color: selected ? const Color(0xFFE8F7FF) : const Color(0xFFFFFCDA),
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -466,50 +447,35 @@ class _NoteBoard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _InfoLine(label: '혼합', value: mixLine),
-          const SizedBox(height: 14),
-          _InfoLine(label: '범위', value: rangeText),
-          const SizedBox(height: 14),
-          _InfoLine(label: '계산', value: formulaText),
-          if (hasAdditionalNote) ...[
-            const SizedBox(height: 18),
-            Text(
-              additionalNote,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.1,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF475467),
+      child: ScallopedCard(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _InfoLine(label: 'Mix', value: mixLine),
+            const SizedBox(height: 10),
+            _InfoLine(label: 'Range', value: rangeText),
+            const SizedBox(height: 10),
+            _InfoLine(label: '공식', value: formulaText),
+            if (hasAdditionalNote) ...[
+              const SizedBox(height: 10),
+              _InfoLine(label: '주석', value: additionalNote),
+            ],
+            if (hasResultDetail) ...[
+              const SizedBox(height: 10),
+              Text(
+                '• $resultDetail',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w900,
+                  color: resultError ? const Color(0xFFC12828) : snoobiInk,
+                ),
               ),
-            ),
+            ],
           ],
-          if (hasResultDetail) ...[
-            const SizedBox(height: 14),
-            Text(
-              resultDetail,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: resultError
-                    ? const Color(0xFFC12828)
-                    : const Color(0xFF475467),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -529,28 +495,37 @@ class _InfoLine extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text(
+          '• ',
+          style: TextStyle(
+            fontSize: 17,
+            height: 1,
+            fontWeight: FontWeight.w900,
+            color: snoobiInk,
+          ),
+        ),
         SizedBox(
-          width: 46,
+          width: 52,
           child: Text(
             label,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14.5,
+              height: 1.1,
               fontWeight: FontWeight.w900,
-              color: Color(0xFF101828),
+              color: snoobiInk,
             ),
           ),
         ),
-        const SizedBox(width: 6),
         Expanded(
           child: Text(
             value,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 11.5,
-              height: 1.0,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF667085),
+              fontSize: 12.5,
+              height: 1.15,
+              fontWeight: FontWeight.w800,
+              color: snoobiInk,
             ),
           ),
         ),

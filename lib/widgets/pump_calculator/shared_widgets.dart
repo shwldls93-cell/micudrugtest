@@ -1,6 +1,26 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'layout_constants.dart';
+
+const snoobiSky = Color(0xFFAEDCEF);
+const snoobiPaper = Color(0xFFFFFEFA);
+const snoobiInk = Color(0xFF171717);
+const snoobiCream = Color(0xFFFFF8B9);
+const snoobiBlue = Color(0xFFAED9EC);
+const snoobiPink = Color(0xFFFFA7D4);
+const snoobiRed = Color(0xFFE75D55);
+
+class SnoobiAsset {
+  const SnoobiAsset._();
+
+  static const dogMegaphone = 'app_assets/snoobi/dog_megaphone.png';
+  static const catMagnifier = 'app_assets/snoobi/cat_magnifier.png';
+  static const star = 'app_assets/snoobi/star.png';
+  static const bubbles = 'app_assets/snoobi/bubbles.png';
+  static const bubbleSingle = 'app_assets/snoobi/bubble_single.png';
+}
 
 class ThemedBoard extends StatelessWidget {
   const ThemedBoard({required this.child, super.key});
@@ -12,19 +32,11 @@ class ThemedBoard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xF7FFFFFF),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: const Color(0xFFE2ECF2), width: 1.2),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x120F6784),
-            blurRadius: 24,
-            offset: Offset(0, 12),
-          ),
-        ],
+        color: snoobiPaper,
+        border: Border.all(color: snoobiInk, width: 2.2),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
         child: child,
       ),
     );
@@ -45,63 +57,140 @@ class CloudHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFFE7F7FC),
-            Color(0xFFFFF6FA),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFE2ECF2), width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final compact = titleSize < 40;
+    final height = compact ? 246.0 : 360.0;
+
+    return SizedBox(
+      height: height,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Row(
-            children: [
-              const _PatternBadge(label: 'ICU CALC'),
-              const Spacer(),
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE1EA),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  color: Color(0xFFB85C7A),
-                  size: 20,
-                ),
-              ),
-            ],
+          Positioned.fill(
+            child: CustomPaint(painter: _CloudPainter()),
           ),
-          const SizedBox(height: 18),
-          _TitleStack(fontSize: titleSize),
-          if (subtitle != null) ...[
-            const SizedBox(height: 10),
-            Text(
-              subtitle!,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF5B6B73),
-                height: 1.45,
+          Positioned(
+            left: compact ? 22 : 28,
+            top: compact ? 36 : 40,
+            child: Image.asset(
+              SnoobiAsset.catMagnifier,
+              width: compact ? 88 : 112,
+              fit: BoxFit.contain,
+            ),
+          ),
+          Positioned(
+            right: compact ? 16 : 26,
+            top: compact ? 74 : 86,
+            child: Image.asset(
+              SnoobiAsset.dogMegaphone,
+              width: compact ? 88 : 112,
+              fit: BoxFit.contain,
+            ),
+          ),
+          Positioned(
+            left: compact ? 132 : 142,
+            top: compact ? 100 : 144,
+            child: _DecorationAsset(
+              path: SnoobiAsset.star,
+              size: compact ? 24 : 31,
+            ),
+          ),
+          Positioned(
+            right: compact ? 58 : 46,
+            top: compact ? 78 : 98,
+            child: _DecorationAsset(
+              path: SnoobiAsset.star,
+              size: compact ? 22 : 28,
+            ),
+          ),
+          Positioned(
+            left: compact ? 18 : 18,
+            top: compact ? 130 : 130,
+            child: _DecorationAsset(
+              path: SnoobiAsset.bubbleSingle,
+              size: compact ? 36 : 44,
+              opacity: 0.9,
+            ),
+          ),
+          Positioned(
+            right: compact ? 0 : -4,
+            bottom: compact ? -4 : 18,
+            child: _DecorationAsset(
+              path: SnoobiAsset.bubbles,
+              size: compact ? 74 : 86,
+              opacity: 0.92,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: compact ? 54 : 70,
+            child: Center(
+              child: _TitleStack(fontSize: titleSize),
+            ),
+          ),
+          if (subtitle != null)
+            Positioned(
+              left: 34,
+              right: 34,
+              bottom: footer == null ? 10 : 56,
+              child: Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF535353),
+                ),
               ),
             ),
-          ],
-          if (footer != null) ...[
-            const SizedBox(height: 18),
-            footer!,
-          ],
+          if (footer != null)
+            Positioned(
+              left: 22,
+              right: 22,
+              bottom: 34,
+              child: footer!,
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class HandDrawnDivider extends StatelessWidget {
+  const HandDrawnDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 2,
+      width: double.infinity,
+      color: snoobiInk,
+      margin: const EdgeInsets.symmetric(vertical: 14),
+    );
+  }
+}
+
+class ScallopedCard extends StatelessWidget {
+  const ScallopedCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(18),
+    this.selected = false,
+    super.key,
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _ScallopedPainter(
+        color: selected ? const Color(0xFFFFF39D) : snoobiCream,
+      ),
+      child: Padding(
+        padding: padding,
+        child: child,
       ),
     );
   }
@@ -119,46 +208,36 @@ class CurrentDepartmentBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5EDF3)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '현재 선택 부서',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF667085),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  title,
+    return Material(
+      color: snoobiCream,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: snoobiInk, width: 1.5),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '$title 선택중',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 14,
                     fontWeight: FontWeight.w900,
+                    color: snoobiInk,
                   ),
                 ),
-              ],
-            ),
+              ),
+              const Icon(Icons.swap_horiz_rounded, size: 18, color: snoobiInk),
+            ],
           ),
-          OutlinedButton(
-            onPressed: onTap,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF475467),
-              side: const BorderSide(color: Color(0xFFD0D5DD)),
-            ),
-            child: const Text('부서 변경'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -178,28 +257,18 @@ class CalculatorRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FBFD),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5EDF3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          LabelPill(text: label),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(child: child),
-              if (suffix != null) ...[
-                const SizedBox(width: 6),
-                suffix!,
-              ],
-            ],
-          ),
+          SizedBox(width: 104, child: LabelPill(text: label)),
+          const SizedBox(width: 10),
+          Expanded(child: child),
+          if (suffix != null) ...[
+            const SizedBox(width: 8),
+            suffix!,
+          ],
         ],
       ),
     );
@@ -214,18 +283,22 @@ class LabelPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF1FF),
+        color: snoobiCream,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: snoobiInk, width: 1.4),
       ),
-      child: Center(
+      alignment: Alignment.center,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
         child: Text(
           text,
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w900,
-            color: Color(0xFF0F6784),
+            color: snoobiInk,
           ),
         ),
       ),
@@ -250,7 +323,7 @@ class UnitLabel extends StatelessWidget {
           style: const TextStyle(
             fontSize: calculatorUnitFontSize,
             fontWeight: FontWeight.w900,
-            color: Color(0xFF163647),
+            color: snoobiInk,
           ),
         ),
       ),
@@ -287,12 +360,12 @@ class RateSuffix extends StatelessWidget {
           const UnitLabel('cc/hr'),
           if (showWarning)
             const Padding(
-              padding: EdgeInsets.only(top: 6),
+              padding: EdgeInsets.only(top: 5),
               child: Text(
-                '주입용량확인',
+                '확인',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 11.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFFC12828),
                 ),
@@ -313,23 +386,24 @@ class ResultBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 74),
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
+      constraints: const BoxConstraints(minHeight: 42),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFD9E4EA)),
+        color: Colors.white,
+        border: Border.all(
+          color: isWarning ? const Color(0xFFC12828) : snoobiInk,
+          width: 1.7,
+        ),
       ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          value,
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w900,
-            color:
-                isWarning ? const Color(0xFFC12828) : const Color(0xFF101828),
-          ),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w900,
+          color: isWarning ? const Color(0xFFC12828) : snoobiInk,
         ),
       ),
     );
@@ -379,11 +453,17 @@ InputDecoration rowDecoration({String? hint}) {
   return InputDecoration(
     hintText: hint,
     filled: true,
-    fillColor: const Color(0xFFFFFFFF),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+    fillColor: Colors.white,
+    isDense: true,
+    hintStyle: const TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w800,
+      color: Color(0xFF555555),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
     border: roundedInputBorder(),
     enabledBorder: roundedInputBorder(),
-    focusedBorder: roundedInputBorder(color: const Color(0xFF8FD5F7)),
+    focusedBorder: roundedInputBorder(color: snoobiBlue, width: 2.2),
   );
 }
 
@@ -391,37 +471,38 @@ InputDecoration editorDecoration(String label) {
   return InputDecoration(
     labelText: label,
     filled: true,
-    fillColor: const Color(0xFFFFFFFF),
+    fillColor: Colors.white,
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-    border: roundedInputBorder(radius: 18),
-    enabledBorder: roundedInputBorder(radius: 18),
+    border: roundedInputBorder(radius: 10),
+    enabledBorder: roundedInputBorder(radius: 10),
     focusedBorder:
-        roundedInputBorder(color: const Color(0xFF8FD5F7), radius: 18),
+        roundedInputBorder(color: snoobiBlue, radius: 10, width: 2.2),
   );
 }
 
 OutlineInputBorder roundedInputBorder({
-  Color color = const Color(0xFFD0D5DD),
-  double radius = 14,
+  Color color = snoobiInk,
+  double radius = 0,
+  double width = 1.6,
 }) {
   return OutlineInputBorder(
     borderRadius: BorderRadius.circular(radius),
-    borderSide: BorderSide(color: color, width: 1.5),
+    borderSide: BorderSide(color: color, width: width),
   );
 }
 
-RoundedRectangleBorder roundedBorder([double radius = 28]) {
+RoundedRectangleBorder roundedBorder([double radius = 12]) {
   return RoundedRectangleBorder(
     borderRadius: BorderRadius.circular(radius),
-    side: const BorderSide(color: Color(0xFFE4E7EC), width: 1.5),
+    side: const BorderSide(color: snoobiInk, width: 1.5),
   );
 }
 
-BoxDecoration roundedDecoration({required Color color, double radius = 28}) {
+BoxDecoration roundedDecoration({required Color color, double radius = 12}) {
   return BoxDecoration(
     color: color,
     borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: const Color(0xFFE4E7EC), width: 1.5),
+    border: Border.all(color: snoobiInk, width: 1.5),
   );
 }
 
@@ -443,16 +524,9 @@ class SoftBottomNav extends StatelessWidget {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xF7FFFFFF),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: const Color(0xFFE5EDF3)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x120F6784),
-              blurRadius: 24,
-              offset: Offset(0, 10),
-            ),
-          ],
+          color: snoobiPaper,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: snoobiInk, width: 1.4),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -478,25 +552,18 @@ class _TitleStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _FlatTitle(
-          text: '스누비',
-          color: const Color(0xFF0F6784),
-          fontSize: fontSize,
-        ),
-        _FlatTitle(
-          text: '쫀득 계산기',
-          color: const Color(0xFF293056),
-          fontSize: fontSize - 2,
-        ),
+        _OutlinedText(text: '스누비', color: snoobiCream, fontSize: fontSize),
+        _OutlinedText(text: '쫀득', color: snoobiBlue, fontSize: fontSize - 5),
+        _OutlinedText(text: '계산기', color: snoobiPink, fontSize: fontSize - 8),
       ],
     );
   }
 }
 
-class _FlatTitle extends StatelessWidget {
-  const _FlatTitle({
+class _OutlinedText extends StatelessWidget {
+  const _OutlinedText({
     required this.text,
     required this.color,
     required this.fontSize,
@@ -508,42 +575,57 @@ class _FlatTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: fontSize,
-        fontWeight: FontWeight.w900,
-        color: color,
-        height: 1.05,
-        letterSpacing: -1.1,
-      ),
+    return Stack(
+      children: [
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w900,
+            height: 0.98,
+            foreground: Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 4.2
+              ..strokeJoin = StrokeJoin.round
+              ..color = snoobiInk,
+          ),
+        ),
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w900,
+            color: color,
+            height: 0.98,
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _PatternBadge extends StatelessWidget {
-  const _PatternBadge({required this.label});
+class _DecorationAsset extends StatelessWidget {
+  const _DecorationAsset({
+    required this.path,
+    required this.size,
+    this.opacity = 1,
+  });
 
-  final String label;
+  final String path;
+  final double size;
+  final double opacity;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFD9E9F2)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          color: Color(0xFF0F6784),
-          letterSpacing: 1.2,
-        ),
+    return Opacity(
+      opacity: opacity,
+      child: Image.asset(
+        path,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
       ),
     );
   }
@@ -564,7 +646,7 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFF0F6784) : const Color(0xFF98A2B3);
+    final color = selected ? snoobiInk : const Color(0xFF8A8A8A);
 
     return InkWell(
       borderRadius: BorderRadius.circular(12),
@@ -588,5 +670,129 @@ class _BottomNavItem extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _CloudPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sky = Paint()..color = snoobiSky;
+    final paper = Paint()..color = snoobiPaper;
+    final stroke = Paint()
+      ..color = snoobiInk
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.1
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawRect(Offset.zero & size, sky);
+
+    final cloud = Path()
+      ..moveTo(0, size.height * 0.22)
+      ..cubicTo(
+        size.width * 0.10,
+        size.height * 0.22,
+        size.width * 0.10,
+        size.height * 0.42,
+        size.width * 0.23,
+        size.height * 0.39,
+      )
+      ..cubicTo(
+        size.width * 0.32,
+        size.height * 0.30,
+        size.width * 0.40,
+        size.height * 0.36,
+        size.width * 0.48,
+        size.height * 0.43,
+      )
+      ..cubicTo(
+        size.width * 0.57,
+        size.height * 0.24,
+        size.width * 0.70,
+        size.height * 0.43,
+        size.width * 0.78,
+        size.height * 0.31,
+      )
+      ..cubicTo(
+        size.width * 0.88,
+        size.height * 0.15,
+        size.width * 0.94,
+        size.height * 0.14,
+        size.width,
+        size.height * 0.07,
+      )
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+
+    canvas.drawPath(cloud, paper);
+    canvas.drawPath(cloud, stroke);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CloudPainter oldDelegate) => false;
+}
+
+class _ScallopedPainter extends CustomPainter {
+  const _ScallopedPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _buildPath(size);
+    canvas.drawPath(path, Paint()..color = color);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = snoobiInk
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  Path _buildPath(Size size) {
+    const step = 15.0;
+    const depth = 4.5;
+    final path = Path()..moveTo(depth, depth);
+
+    var x = depth;
+    while (x < size.width - depth) {
+      final next = math.min(x + step, size.width - depth);
+      path.quadraticBezierTo((x + next) / 2, -depth, next, depth);
+      x = next;
+    }
+
+    var y = depth;
+    while (y < size.height - depth) {
+      final next = math.min(y + step, size.height - depth);
+      path.quadraticBezierTo(
+          size.width + depth, (y + next) / 2, size.width - depth, next);
+      y = next;
+    }
+
+    x = size.width - depth;
+    while (x > depth) {
+      final next = math.max(x - step, depth);
+      path.quadraticBezierTo(
+          (x + next) / 2, size.height + depth, next, size.height - depth);
+      x = next;
+    }
+
+    y = size.height - depth;
+    while (y > depth) {
+      final next = math.max(y - step, depth);
+      path.quadraticBezierTo(-depth, (y + next) / 2, depth, next);
+      y = next;
+    }
+
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScallopedPainter oldDelegate) {
+    return color != oldDelegate.color;
   }
 }

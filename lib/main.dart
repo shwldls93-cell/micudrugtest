@@ -86,7 +86,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   bool _useWeight = true;
   bool _isLoading = true;
   String _selectedTimeUnit = 'min';
-  String _activeBottomTab = 'home';
   String _presetSearchQuery = '';
 
   @override
@@ -111,22 +110,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     _noteController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _handleBottomNavTap(String tab) {
-    setState(() => _activeBottomTab = tab);
-
-    switch (tab) {
-      case 'home':
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeOutCubic,
-        );
-        break;
-      default:
-        break;
-    }
   }
 
   Future<void> _loadState() async {
@@ -549,26 +532,13 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     }
 
     return Scaffold(
-      bottomNavigationBar: SoftBottomNav(
-        selectedTab: _activeBottomTab,
-        onTap: _handleBottomNavTap,
-      ),
+      backgroundColor: snoobiSky,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF7FBFF),
-              Color(0xFFEEF6FB),
-              Color(0xFFFFF4F8),
-            ],
-          ),
-        ),
+        color: snoobiSky,
         child: SafeArea(
           child: SingleChildScrollView(
             controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+            padding: const EdgeInsets.fromLTRB(10, 12, 10, 28),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: calculatorMaxWidth),
