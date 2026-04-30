@@ -49,10 +49,13 @@ class _LandingSectionBody extends StatelessWidget {
           const SizedBox(height: 20),
           const _PickBanner(),
           const SizedBox(height: 28),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 14,
-            runSpacing: 18,
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 18,
+            crossAxisSpacing: 18,
+            childAspectRatio: 1.35,
             children: [
               for (final department in preset_data.defaultDepartments)
                 DepartmentCard(
@@ -90,11 +93,11 @@ class DepartmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: SizedBox(
-          width: 84,
-          height: 98,
+          width: double.infinity,
+          height: double.infinity,
           child: ScallopedCard(
             selected: selected,
-            padding: const EdgeInsets.fromLTRB(8, 18, 8, 14),
+            padding: const EdgeInsets.fromLTRB(10, 18, 10, 14),
             child: Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,

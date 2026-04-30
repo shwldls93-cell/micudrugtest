@@ -262,9 +262,9 @@ class _PresetDropdownLabel extends StatelessWidget {
     final resolvedFontSize = scaleToFit ? 17.0 : (fontSize ?? 15.0);
     final label = Text(
       text,
-      maxLines: 1,
-      overflow: scaleToFit ? TextOverflow.visible : TextOverflow.ellipsis,
-      softWrap: false,
+      maxLines: scaleToFit ? 1 : null,
+      overflow: TextOverflow.visible,
+      softWrap: !scaleToFit,
       style: TextStyle(
         fontSize: resolvedFontSize,
         fontWeight: scaleToFit ? FontWeight.w900 : FontWeight.w800,
@@ -282,8 +282,8 @@ class _PresetDropdownLabel extends StatelessWidget {
             Flexible(
               child: Text(
                 helperText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: TextOverflow.visible,
+                softWrap: true,
                 style: TextStyle(
                   fontSize: detailFontSize ?? 12.5,
                   fontWeight: FontWeight.w700,
@@ -465,10 +465,9 @@ class _NoteBoard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 '• $resultDetail',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12.5,
+                  height: 1.2,
                   fontWeight: FontWeight.w900,
                   color: resultError ? const Color(0xFFC12828) : snoobiInk,
                 ),
@@ -519,11 +518,9 @@ class _InfoLine extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 12.5,
-              height: 1.15,
+              height: 1.25,
               fontWeight: FontWeight.w800,
               color: snoobiInk,
             ),
