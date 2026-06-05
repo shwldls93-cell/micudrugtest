@@ -153,6 +153,47 @@ void main() {
       expect(migrated.single.maxDose, 1);
     });
 
+    test('uses the updated MICU ketamine preset values', () {
+      final preset = defaultMicuPresets().firstWhere(
+        (preset) => preset.name == 'ketamine 250mg',
+      );
+
+      expect(preset.doseUnit, 'mg/kg/hr');
+      expect(preset.drugAmount, 500);
+      expect(preset.drugUnit, 'mg');
+      expect(preset.volumeMl, 250);
+      expect(preset.timeUnit, 'hr');
+      expect(preset.useWeight, isTrue);
+      expect(preset.minDose, 0.2);
+      expect(preset.maxDose, 4);
+    });
+
+    test('migrates legacy MICU ketamine preset units', () {
+      final migrated = replaceLegacyMicuKetaminePreset([
+        DrugPreset(
+          id: 'legacy-ketamine',
+          name: 'ketamine 250mg',
+          doseUnit: 'mcg/kg/hr',
+          drugAmount: 500000,
+          drugUnit: 'mcg',
+          volumeMl: 250,
+          timeUnit: 'hr',
+          useWeight: true,
+          minDose: 0.2,
+          maxDose: 4,
+          note: 'old note',
+        ),
+      ]);
+
+      expect(migrated, hasLength(1));
+      expect(migrated.single.id, 'legacy-ketamine');
+      expect(migrated.single.doseUnit, 'mg/kg/hr');
+      expect(migrated.single.drugAmount, 500);
+      expect(migrated.single.drugUnit, 'mg');
+      expect(migrated.single.minDose, 0.2);
+      expect(migrated.single.maxDose, 4);
+    });
+
     test('uses the updated EICU2 preset list', () {
       final presets = defaultEicu2Presets();
       final precedex =
@@ -216,6 +257,59 @@ void main() {
       );
     });
 
+    test('all default presets have calculable dosage settings', () {
+      for (final department in defaultDepartments) {
+        final seenIds = <String>{};
+
+        for (final preset in department.presets) {
+          final label = '${department.label} / ${preset.name}';
+          final doseAmountUnit = parseDoseAmountUnit(preset.doseUnit);
+          final drugAmountUnit = parseDrugAmountUnit(preset.drugUnit);
+
+          expect(preset.id.trim(), isNotEmpty, reason: label);
+          expect(seenIds.add(preset.id), isTrue, reason: '$label duplicate id');
+          expect(preset.name.trim(), isNotEmpty, reason: label);
+          expect(preset.drugAmount, greaterThan(0), reason: label);
+          expect(preset.volumeMl, greaterThan(0), reason: label);
+          expect(doseAmountUnit, isNotNull, reason: label);
+          expect(drugAmountUnit, isNotNull, reason: label);
+          expect(
+            canConvertAmountUnits(drugAmountUnit!, doseAmountUnit!),
+            isTrue,
+            reason: '$label unit mismatch',
+          );
+          expect(
+            preset.useWeight,
+            normalizeDoseUnitLabel(preset.doseUnit).contains('/kg/'),
+            reason: '$label useWeight mismatch',
+          );
+
+          if (preset.minDose != null && preset.maxDose != null) {
+            expect(
+              preset.minDose! <= preset.maxDose!,
+              isTrue,
+              reason: '$label invalid range',
+            );
+          }
+
+          final dose = _representativeDose(preset);
+          final rate = calculateRate(
+            dose: dose,
+            weight: 60,
+            preset: preset,
+          );
+          expect(rate.isFinite, isTrue, reason: label);
+          expect(rate, greaterThan(0), reason: label);
+          expect(
+            formatCalculatedRate(roundCalculatedRate(rate, preset), preset),
+            isNotEmpty,
+            reason: label,
+          );
+          expect(validateDoseRange(dose, preset), isNull, reason: label);
+        }
+      }
+    });
+
     test('warns when the dose exceeds the preset maximum', () {
       final preset = DrugPreset(
         id: 'range',
@@ -265,4 +359,17 @@ void main() {
       expect(selectedPresetDetail('propofol'), isNull);
     });
   });
+}
+
+double _representativeDose(DrugPreset preset) {
+  if (preset.minDose != null && preset.maxDose != null) {
+    return (preset.minDose! + preset.maxDose!) / 2;
+  }
+  if (preset.minDose != null && preset.minDose! > 0) {
+    return preset.minDose!;
+  }
+  if (preset.maxDose != null && preset.maxDose! > 0) {
+    return preset.maxDose!;
+  }
+  return 1;
 }

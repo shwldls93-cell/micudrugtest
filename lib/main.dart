@@ -147,6 +147,12 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
               savedList,
             );
           }
+          if (department.id == 'micu' &&
+              preset_data.shouldReplaceLegacyMicuKetaminePreset(savedList)) {
+            savedList = preset_data.replaceLegacyMicuKetaminePreset(
+              savedList,
+            );
+          }
           if (department.id == 'eicu2' &&
               preset_data.shouldReplaceLegacyEicu2Presets(savedList)) {
             savedList = preset_data.replaceLegacyEicu2Presets(savedList);

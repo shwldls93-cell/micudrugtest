@@ -92,14 +92,33 @@ bool _isLegacyMicuRocuroniumPreset(DrugPreset preset) {
       preset.doseUnit.trim().toLowerCase() == 'mcg/kg/hr';
 }
 
+bool _isLegacyMicuKetaminePreset(DrugPreset preset) {
+  return preset.name.trim().toLowerCase() == 'ketamine 250mg' &&
+      preset.doseUnit.trim().toLowerCase() == 'mcg/kg/hr';
+}
+
 bool shouldReplaceLegacyMicuRocuroniumPreset(List<DrugPreset> presets) {
   return presets.any(_isLegacyMicuRocuroniumPreset);
+}
+
+bool shouldReplaceLegacyMicuKetaminePreset(List<DrugPreset> presets) {
+  return presets.any(_isLegacyMicuKetaminePreset);
 }
 
 List<DrugPreset> replaceLegacyMicuRocuroniumPreset(List<DrugPreset> presets) {
   return presets.map((preset) {
     if (_isLegacyMicuRocuroniumPreset(preset)) {
       return buildMicuRocuroniumPreset(id: preset.id);
+    }
+
+    return preset.copy();
+  }).toList();
+}
+
+List<DrugPreset> replaceLegacyMicuKetaminePreset(List<DrugPreset> presets) {
+  return presets.map((preset) {
+    if (_isLegacyMicuKetaminePreset(preset)) {
+      return buildMicuKetaminePreset(id: preset.id);
     }
 
     return preset.copy();
@@ -161,6 +180,23 @@ DrugPreset buildMicuRocuroniumPreset({String? id}) {
     minDose: 0.2,
     maxDose: 1,
     note: 'Mix 250 mg + 5DW 50 mL\n1 vial 50 mg 기준 / 총량 250 mg\nmin 0.2, max 1',
+  );
+}
+
+DrugPreset buildMicuKetaminePreset({String? id}) {
+  return buildDrugPreset(
+    id: id,
+    name: 'ketamine 250mg',
+    doseUnit: 'mg/kg/hr',
+    drugAmount: 500,
+    drugUnit: 'mg',
+    volumeMl: 250,
+    timeUnit: 'hr',
+    useWeight: true,
+    minDose: 0.2,
+    maxDose: 4,
+    note:
+        'Mix 500 mg + 5DW 250 mL\n1 vial 250 mg 기준 / 총량 500 mg\nmin 0.2, max 4',
   );
 }
 
@@ -669,19 +705,7 @@ List<DrugPreset> defaultMicuPresets() {
           'Mix 200 mcg + 5DW 40 mL\n1 vial 50 mcg 기준 / 총량 200 mcg\nmin 0.2, max 1',
     ),
     buildMicuRocuroniumPreset(),
-    buildDrugPreset(
-      name: 'ketamine 250mg',
-      doseUnit: 'mcg/kg/hr',
-      drugAmount: 500000,
-      drugUnit: 'mcg',
-      volumeMl: 250,
-      timeUnit: 'hr',
-      useWeight: true,
-      minDose: 0.2,
-      maxDose: 4,
-      note:
-          'Mix 500 mg + 5DW 250 mL\n1 vial 250 mg 기준 / 총량 500 mg\nmin 0.2, max 4',
-    ),
+    buildMicuKetaminePreset(),
     buildDrugPreset(
       name: 'midazolam 15mg',
       doseUnit: 'mg/hr',
@@ -998,7 +1022,7 @@ final List<DepartmentPreset> defaultDepartments = [
           drugUnit: 'mg',
           volumeMl: 250,
           timeUnit: 'min',
-          useWeight: false,
+          useWeight: true,
           minDose: 0.5,
           maxDose: 3,
           note: 'Mix 50 mg + NS 250 mL',
