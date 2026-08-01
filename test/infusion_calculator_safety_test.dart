@@ -52,6 +52,16 @@ void main() {
       }
     });
 
+    test('labels the MICU propofol preset with its full 400 mg concentration', () {
+      final propofol = defaultPresetMap()['micu']!
+          .firstWhere((item) => item.name == 'propofol 400mg');
+
+      expect(propofol.drugAmount, 400000);
+      expect(propofol.drugUnit, 'mcg');
+      expect(propofol.volumeMl, 40);
+      expect(presetDropdownLabel(propofol.name), 'propofol 400mg');
+    });
+
     test('converts mg concentration to a mcg prescription before calculating', () {
       final adrenaline = defaultPresetMap()['eicu2']!
           .firstWhere((item) => item.name == 'Adrenaline');

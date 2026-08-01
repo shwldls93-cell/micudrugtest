@@ -2024,11 +2024,7 @@ String formulaDrugAmount(DrugPreset preset) {
 }
 
 String presetDropdownLabel(String presetName) {
-  final withoutDose = presetName.replaceAll(
-    RegExp(r'\s+\d+(?:\.\d+)?\s*(?:mg|mcg|iu)(?=\s*\(|$)', caseSensitive: false),
-    '',
-  );
-  return withoutDose.replaceAllMapped(
+  return presetName.trim().replaceAllMapped(
     RegExp(r'([A-Za-z가-힣])\('),
     (match) => '${match.group(1)} (',
   );
@@ -2219,7 +2215,7 @@ bool shouldReplaceLegacyMicuPresets(List<DrugPreset> presets) {
   const correctedNames = {
     'precedex',
     'remifentanil 1mg',
-    'propofol 200mg',
+    'propofol 400mg',
     'sufentanil 50mcg',
     'rocuronium 50mg',
     'ketamine 250mg',
@@ -2329,7 +2325,7 @@ List<DrugPreset> defaultMicuPresets() {
       note: 'Mix 2 mg + 5DW 40 mL\n1 vial 1 mg 기준 / 총량 2 mg\nmin 0.01, max 0.1',
     ),
     buildDrugPreset(
-      name: 'propofol 200mg',
+      name: 'propofol 400mg',
       doseUnit: 'mcg/kg/min',
       drugAmount: 400000,
       drugUnit: 'mcg',
