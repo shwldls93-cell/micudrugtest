@@ -12,6 +12,8 @@ const legacySelectedDepartmentKeys = [
   'icu_selected_department_v1',
 ];
 
+const supportedTimeUnits = {'min', 'hr', 'day'};
+
 void main() {
   runApp(const JjonddeukCalculatorApp());
 }
@@ -59,6 +61,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   final _drugAmountController = TextEditingController();
   final _drugUnitController = TextEditingController();
   final _volumeController = TextEditingController();
+  final _rateIncrementController = TextEditingController();
   final _noteController = TextEditingController();
 
   final _calculatorFormKey = GlobalKey<FormState>();
@@ -98,6 +101,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     _drugAmountController.dispose();
     _drugUnitController.dispose();
     _volumeController.dispose();
+    _rateIncrementController.dispose();
     _noteController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -143,35 +147,15 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       prefs,
       selectedDepartmentKey,
       legacySelectedDepartmentKeys,
-    );
-    final savedMapRaw = readFirstAvailableString(
-      prefs,
-      storageKey,
-      legacyStorageKeys,
+      ignoreEmpty: true,
     );
 
-    Map<String, List<DrugPreset>> mergedMap = defaultPresetMap();
+    final mergedMap = migratePresetMap(
+      currentRaw: prefs.getString(storageKey),
+      legacyRaw: readFirstLegacyString(prefs, legacyStorageKeys),
+    );
 
-    if (savedMapRaw != null && savedMapRaw.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(savedMapRaw) as Map<String, dynamic>;
-        mergedMap = {};
-        for (final department in defaultDepartments) {
-          var savedList = (decoded[department.id] as List<dynamic>?)
-                  ?.map((item) => DrugPreset.fromJson(item as Map<String, dynamic>))
-                  .toList() ??
-              <DrugPreset>[];
-          if (department.id == 'micu' && shouldReplaceLegacyMicuPresets(savedList)) {
-            savedList = <DrugPreset>[];
-          }
-          mergedMap[department.id] = savedList.isNotEmpty
-              ? ensureUniquePresetIds(savedList)
-              : ensureUniquePresetIds(department.presets.map((preset) => preset.copy()).toList());
-        }
-      } catch (_) {
-        mergedMap = defaultPresetMap();
-      }
-    }
+    if (!mounted) return;
 
     setState(() {
       _presetsByDepartment = mergedMap;
@@ -264,6 +248,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       _drugAmountController.clear();
       _drugUnitController.clear();
       _volumeController.clear();
+      _rateIncrementController.clear();
       _noteController.clear();
       _selectedTimeUnit = 'min';
       _useWeight = true;
@@ -277,6 +262,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     _drugAmountController.text = preset.drugAmount.toString();
     _drugUnitController.text = preset.drugUnit;
     _volumeController.text = preset.volumeMl.toString();
+    _rateIncrementController.text = preset.rateIncrementMlPerHr.toString();
     _noteController.text = preset.note;
     _selectedTimeUnit = preset.timeUnit;
     _useWeight = preset.useWeight;
@@ -299,7 +285,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     final dose = double.tryParse(_doseController.text.trim());
     final weight = double.tryParse(_weightController.text.trim());
 
-    if (dose == null || dose <= 0) {
+    if (!isFinitePositive(dose)) {
       setState(() {
         _resultValue = '입력 확인';
         _resultDetail = '목표 용량을 0보다 큰 숫자로 입력해 주세요.';
@@ -309,7 +295,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       return;
     }
 
-    if (preset.useWeight && (weight == null || weight <= 0)) {
+    if (preset.useWeight && !isFinitePositive(weight)) {
       setState(() {
         _resultValue = '입력 확인';
         _resultDetail = '체중 기반 약물이므로 몸무게를 입력해 주세요.';
@@ -319,14 +305,56 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       return;
     }
 
-    final rangeWarning = validateDoseRange(dose, preset);
+    final presetError = validatePreset(preset);
+    if (presetError != null) {
+      setState(() {
+        _resultValue = '설정 확인';
+        _resultDetail = '선택한 계산식이 안전하지 않아 계산하지 않았습니다: $presetError';
+        _resultError = true;
+        _resultDoseWarning = false;
+      });
+      return;
+    }
+
+    final targetRangeWarning = validateDoseRange(dose, preset);
 
     final rate = calculateRate(
       dose: dose,
       weight: weight ?? 0,
       preset: preset,
     );
+    if (!rate.isFinite || rate < 0) {
+      setState(() {
+        _resultValue = '계산 오류';
+        _resultDetail = '계산 결과가 유효하지 않아 펌프 속도를 표시하지 않았습니다.';
+        _resultError = true;
+        _resultDoseWarning = false;
+      });
+      return;
+    }
     final roundedRate = roundCalculatedRate(rate, preset);
+    if (roundedRate <= 0 && rate > 0) {
+      setState(() {
+        _resultValue = '설정 확인';
+        _resultDetail =
+            '계산된 속도(${formatNumber(rate)} mL/hr)가 펌프 반올림 단위보다 작아 0 mL/hr로 반올림됩니다. '
+            '더 낮은 펌프 단위 또는 처방/농도를 확인해 주세요.';
+        _resultError = true;
+        _resultDoseWarning = false;
+      });
+      return;
+    }
+    final deliveredDose = calculateDoseFromRate(
+      rateMlPerHr: roundedRate,
+      weight: weight ?? 0,
+      preset: preset,
+    );
+    final deliveredRangeWarning = validateDoseRange(deliveredDose, preset);
+    final rangeWarning = targetRangeWarning ??
+        (deliveredRangeWarning == null
+            ? null
+            : '펌프 반올림 후 예상 용량 ${formatNumber(deliveredDose)} ${preset.doseUnit}: '
+                '$deliveredRangeWarning');
 
     setState(() {
       _resultValue = formatCalculatedRate(roundedRate, preset);
@@ -349,13 +377,17 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
         ? null
         : double.tryParse(_maxDoseController.text.trim());
 
-    if ((minDose != null && minDose < 0) || (maxDose != null && maxDose < 0)) {
-      _showSnackBar('최소/최대 용량은 0 이상의 숫자로 입력해 주세요.');
+    if ((_minDoseController.text.trim().isNotEmpty && minDose == null) ||
+        (_maxDoseController.text.trim().isNotEmpty && maxDose == null)) {
+      _showSnackBar('최소/최대 용량은 유한한 숫자로 입력해 주세요.');
       return;
     }
 
-    if (minDose != null && maxDose != null && minDose > maxDose) {
-      _showSnackBar('최소 용량은 최대 용량보다 클 수 없습니다.');
+    final drugAmount = double.tryParse(_drugAmountController.text.trim());
+    final volumeMl = double.tryParse(_volumeController.text.trim());
+    final rateIncrement = double.tryParse(_rateIncrementController.text.trim());
+    if (drugAmount == null || volumeMl == null || rateIncrement == null) {
+      _showSnackBar('총 약물량, 최종 부피, 펌프 반올림 단위는 유한한 숫자로 입력해 주세요.');
       return;
     }
 
@@ -365,21 +397,22 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       doseUnit: _doseUnitController.text.trim(),
       minDose: minDose,
       maxDose: maxDose,
-      drugAmount: double.parse(_drugAmountController.text.trim()),
+      drugAmount: drugAmount,
       drugUnit: _drugUnitController.text.trim(),
-      volumeMl: double.parse(_volumeController.text.trim()),
+      volumeMl: volumeMl,
       timeUnit: _selectedTimeUnit,
       useWeight: _useWeight,
       note: _noteController.text.trim(),
+      rateIncrementMlPerHr: rateIncrement,
     );
 
-    final updated = [..._currentPresets];
-    final index = updated.indexWhere((item) => item.id == preset.id);
-    if (index >= 0) {
-      updated[index] = preset;
-    } else {
-      updated.add(preset);
+    final presetError = validatePreset(preset);
+    if (presetError != null) {
+      _showSnackBar('저장하지 않았습니다: $presetError');
+      return;
     }
+
+    final updated = upsertPreset(_currentPresets, preset);
 
     setState(() {
       _presetsByDepartment[_selectedDepartmentId!] = updated;
@@ -591,7 +624,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                     _EditorField(controller: _maxDoseController, label: '최대 용량 (선택)', width: 220, keyboardType: TextInputType.number),
                     _EditorField(controller: _drugAmountController, label: '총 약물량', width: 220, keyboardType: TextInputType.number),
                     _EditorField(controller: _drugUnitController, label: '총 약물량 단위', width: 220),
-                    _EditorField(controller: _volumeController, label: '용매량 (mL)', width: 220, keyboardType: TextInputType.number),
+                    _EditorField(controller: _volumeController, label: '최종 부피 (mL)', width: 220, keyboardType: TextInputType.number),
+                    _EditorField(controller: _rateIncrementController, label: '펌프 반올림 단위 (mL/hr)', width: 220, keyboardType: TextInputType.number),
                     SizedBox(
                       width: 220,
                       child: DropdownButtonFormField<String>(
@@ -751,7 +785,8 @@ class _CalculatorSection extends StatelessWidget {
         : extractMixLine(preset.note, preset.name);
     final formulaText = preset == null
         ? '-'
-        : '목표용량 × ${preset.useWeight ? '체중 × ' : ''}$timeMultiplier × ${formatNumber(preset.volumeMl)} ÷ ${formatNumber(preset.drugAmount)}';
+        : '목표용량 × ${preset.useWeight ? '체중 × ' : ''}$timeMultiplier × '
+            '${formatNumber(preset.volumeMl)} mL ÷ ${formulaDrugAmount(preset)}';
 
     return ThemedBoard(
       child: Column(
@@ -1536,6 +1571,12 @@ class _EditorField extends StatelessWidget {
         validator: (value) {
           if ((label == '최소 용량 (선택)' || label == '최대 용량 (선택)') || value == null) return null;
           if (value.trim().isEmpty) return '$label 입력';
+          if (label == '총 약물량' ||
+              label == '최종 부피 (mL)' ||
+              label == '펌프 반올림 단위 (mL/hr)') {
+            final parsed = double.tryParse(value.trim());
+            if (!isFinitePositive(parsed)) return '$label은 0보다 큰 유한한 숫자여야 합니다.';
+          }
           return null;
         },
         decoration: editorDecoration(label),
@@ -1748,34 +1789,204 @@ class _BottomNavItem extends StatelessWidget {
   }
 }
 
+enum MedicationUnit {
+  mcg('mcg', 1),
+  mg('mg', 1000),
+  g('g', 1000000),
+  iu('IU', null),
+  unit('units', null);
+
+  const MedicationUnit(this.label, this.microgramFactor);
+
+  final String label;
+  final double? microgramFactor;
+
+  bool get isMass => microgramFactor != null;
+}
+
+bool isFinitePositive(double? value) => value != null && value.isFinite && value > 0;
+
+bool isFiniteNonNegative(double? value) => value != null && value.isFinite && value >= 0;
+
+MedicationUnit? medicationUnitFromText(String value) {
+  final normalized = value.trim().toLowerCase().replaceAll('μ', 'u').replaceAll('µ', 'u');
+  switch (normalized) {
+    case 'mcg':
+    case 'ug':
+    case 'microgram':
+    case 'micrograms':
+      return MedicationUnit.mcg;
+    case 'mg':
+    case 'milligram':
+    case 'milligrams':
+      return MedicationUnit.mg;
+    case 'g':
+    case 'gram':
+    case 'grams':
+      return MedicationUnit.g;
+    case 'iu':
+      return MedicationUnit.iu;
+    case 'unit':
+    case 'units':
+      return MedicationUnit.unit;
+    default:
+      return null;
+  }
+}
+
+MedicationUnit? doseMedicationUnit(String doseUnit) {
+  return medicationUnitFromText(doseUnit.split('/').first);
+}
+
+String? timeUnitFromDoseUnit(String doseUnit) {
+  final parts = doseUnit.trim().toLowerCase().split('/');
+  if (parts.length < 2) return null;
+  switch (parts.last.trim()) {
+    case 'min':
+    case 'minute':
+    case 'minutes':
+      return 'min';
+    case 'hr':
+    case 'hour':
+    case 'hours':
+      return 'hr';
+    case 'day':
+    case 'days':
+      return 'day';
+    default:
+      return null;
+  }
+}
+
+double? convertMedicationAmount(
+  double amount, {
+  required MedicationUnit from,
+  required MedicationUnit to,
+}) {
+  if (!amount.isFinite) return null;
+  if (from == to) return amount;
+  if (!from.isMass || !to.isMass) return null;
+  return amount * from.microgramFactor! / to.microgramFactor!;
+}
+
+String? validatePreset(DrugPreset preset) {
+  if (preset.name.trim().isEmpty) return '약물명이 비어 있습니다.';
+  if (preset.doseUnit.trim().isEmpty) return '목표 용량 단위가 비어 있습니다.';
+  if (!isFinitePositive(preset.drugAmount)) return '총 약물량은 0보다 큰 유한한 숫자여야 합니다.';
+  if (!isFinitePositive(preset.volumeMl)) return '최종 부피는 0보다 큰 유한한 숫자여야 합니다.';
+  if (!supportedTimeUnits.contains(preset.timeUnit)) return '시간 기준은 min, hr, day 중 하나여야 합니다.';
+  final doseTimeUnit = timeUnitFromDoseUnit(preset.doseUnit);
+  if (doseTimeUnit == null) return '목표 용량 단위에 min, hr, day 시간 기준을 포함해야 합니다.';
+  if (doseTimeUnit != preset.timeUnit) {
+    return '목표 용량 단위의 시간 기준과 선택한 시간 기준이 일치하지 않습니다.';
+  }
+  if (preset.minDose != null && !isFiniteNonNegative(preset.minDose)) {
+    return '최소 용량은 0 이상의 유한한 숫자여야 합니다.';
+  }
+  if (preset.maxDose != null && !isFiniteNonNegative(preset.maxDose)) {
+    return '최대 용량은 0 이상의 유한한 숫자여야 합니다.';
+  }
+  if (preset.minDose != null && preset.maxDose != null && preset.minDose! > preset.maxDose!) {
+    return '최소 용량은 최대 용량보다 클 수 없습니다.';
+  }
+  if (!isFinitePositive(preset.rateIncrementMlPerHr)) {
+    return '펌프 반올림 단위는 0보다 큰 유한한 숫자여야 합니다.';
+  }
+
+  final drugUnit = medicationUnitFromText(preset.drugUnit);
+  final doseUnit = doseMedicationUnit(preset.doseUnit);
+  if (drugUnit == null || doseUnit == null) {
+    return '총 약물량과 목표 용량의 단위를 인식할 수 없습니다.';
+  }
+  if (convertMedicationAmount(preset.drugAmount, from: drugUnit, to: doseUnit) == null) {
+    return '총 약물량과 목표 용량의 단위가 호환되지 않습니다.';
+  }
+  return null;
+}
+
 double calculateRate({
   required double dose,
   required double weight,
   required DrugPreset preset,
 }) {
+  final presetError = validatePreset(preset);
+  if (presetError != null) throw ArgumentError.value(preset, 'preset', presetError);
+  if (!isFinitePositive(dose)) {
+    throw ArgumentError.value(dose, 'dose', 'Dose must be a finite number greater than zero.');
+  }
+  if (preset.useWeight && !isFinitePositive(weight)) {
+    throw ArgumentError.value(weight, 'weight', 'Weight must be a finite number greater than zero.');
+  }
+
+  final drugUnit = medicationUnitFromText(preset.drugUnit)!;
+  final doseUnit = doseMedicationUnit(preset.doseUnit)!;
+  final normalizedDrugAmount =
+      convertMedicationAmount(preset.drugAmount, from: drugUnit, to: doseUnit)!;
   final timeMultiplier = timeUnitRateFactor(preset.timeUnit);
   final weightFactor = preset.useWeight ? weight : 1.0;
-  return (dose * weightFactor * timeMultiplier * preset.volumeMl) / preset.drugAmount;
+  final rate = (dose * weightFactor * timeMultiplier * preset.volumeMl) / normalizedDrugAmount;
+  if (!rate.isFinite || rate < 0) {
+    throw StateError('Calculated infusion rate is not finite.');
+  }
+  return rate;
+}
+
+double calculateDoseFromRate({
+  required double rateMlPerHr,
+  required double weight,
+  required DrugPreset preset,
+}) {
+  final presetError = validatePreset(preset);
+  if (presetError != null) throw ArgumentError.value(preset, 'preset', presetError);
+  if (!isFiniteNonNegative(rateMlPerHr)) {
+    throw ArgumentError.value(rateMlPerHr, 'rateMlPerHr', 'Rate must be finite and non-negative.');
+  }
+  if (preset.useWeight && !isFinitePositive(weight)) {
+    throw ArgumentError.value(weight, 'weight', 'Weight must be a finite number greater than zero.');
+  }
+
+  final drugUnit = medicationUnitFromText(preset.drugUnit)!;
+  final doseUnit = doseMedicationUnit(preset.doseUnit)!;
+  final normalizedDrugAmount =
+      convertMedicationAmount(preset.drugAmount, from: drugUnit, to: doseUnit)!;
+  final denominator = (preset.useWeight ? weight : 1.0) *
+      timeUnitRateFactor(preset.timeUnit) *
+      preset.volumeMl;
+  final dose = rateMlPerHr * normalizedDrugAmount / denominator;
+  if (!dose.isFinite || dose < 0) {
+    throw StateError('Calculated dose is not finite.');
+  }
+  return dose;
 }
 
 double roundCalculatedRate(double value, DrugPreset preset) {
-  if (preset.name.toLowerCase() == 'heparin') {
-    return value.roundToDouble();
+  if (!value.isFinite || value < 0) {
+    throw ArgumentError.value(value, 'value', 'Rate must be a finite non-negative number.');
   }
-
-  return (value * 10).round() / 10;
+  final increment = preset.rateIncrementMlPerHr;
+  if (!isFinitePositive(increment)) {
+    throw ArgumentError.value(increment, 'rateIncrementMlPerHr', 'Increment must be finite and positive.');
+  }
+  return (value / increment).round() * increment;
 }
 
 String formatCalculatedRate(double value, DrugPreset preset) {
-  if (preset.name.toLowerCase() == 'heparin') {
-    return value.toStringAsFixed(0);
-  }
+  if (!value.isFinite || value < 0) return '--';
+  final increment = preset.rateIncrementMlPerHr;
+  if (!isFinitePositive(increment)) return '--';
 
-  return value.toStringAsFixed(1);
+  var digits = 0;
+  var scaled = increment;
+  while (digits < 3 && (scaled - scaled.round()).abs() > 0.000001) {
+    scaled *= 10;
+    digits += 1;
+  }
+  return value.toStringAsFixed(digits);
 }
 
 
 String? validateDoseRange(double dose, DrugPreset preset) {
+  if (!dose.isFinite) return '입력 용량은 유한한 숫자여야 합니다.';
   if (preset.minDose != null && dose < preset.minDose!) {
     return '입력 용량이 최소 권장 용량(${formatOptionalDose(preset.minDose, preset.doseUnit)})보다 낮습니다.';
   }
@@ -1795,6 +2006,21 @@ String formatNumber(num value) {
 String formatOptionalDose(double? value, String unit) {
   if (value == null) return '-';
   return '${formatNumber(value)} $unit';
+}
+
+String formulaDrugAmount(DrugPreset preset) {
+  final sourceUnit = medicationUnitFromText(preset.drugUnit);
+  final targetUnit = doseMedicationUnit(preset.doseUnit);
+  if (sourceUnit == null || targetUnit == null) {
+    return '${formatNumber(preset.drugAmount)} ${preset.drugUnit}';
+  }
+  final converted = convertMedicationAmount(
+    preset.drugAmount,
+    from: sourceUnit,
+    to: targetUnit,
+  );
+  if (converted == null) return '${formatNumber(preset.drugAmount)} ${preset.drugUnit}';
+  return '${formatNumber(converted)} ${targetUnit.label}';
 }
 
 String presetDropdownLabel(String presetName) {
@@ -1841,6 +2067,49 @@ Map<String, List<DrugPreset>> defaultPresetMap() {
   };
 }
 
+Map<String, List<DrugPreset>> migratePresetMap({
+  String? currentRaw,
+  String? legacyRaw,
+}) {
+  return _decodePresetMap(currentRaw) ?? _decodePresetMap(legacyRaw) ?? defaultPresetMap();
+}
+
+Map<String, List<DrugPreset>>? _decodePresetMap(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return null;
+
+  try {
+    final decodedValue = jsonDecode(raw);
+    if (decodedValue is! Map) return null;
+    final decoded = Map<String, dynamic>.from(decodedValue);
+    final mergedMap = <String, List<DrugPreset>>{};
+
+    for (final department in defaultDepartments) {
+      final rawPresets = decoded[department.id];
+      if (rawPresets is! List) {
+        mergedMap[department.id] = department.presets.map((preset) => preset.copy()).toList();
+        continue;
+      }
+
+      final parsedPresets = <DrugPreset>[];
+      for (final rawPreset in rawPresets) {
+        if (rawPreset is! Map) continue;
+        final preset = DrugPreset.tryFromJson(Map<String, dynamic>.from(rawPreset));
+        if (preset != null) parsedPresets.add(preset);
+      }
+
+      if (department.id == 'micu' && shouldReplaceLegacyMicuPresets(parsedPresets)) {
+        parsedPresets.clear();
+      }
+      mergedMap[department.id] = parsedPresets.isEmpty
+          ? department.presets.map((preset) => preset.copy()).toList()
+          : ensureUniquePresetIds(parsedPresets);
+    }
+    return mergedMap;
+  } catch (_) {
+    return null;
+  }
+}
+
 List<DrugPreset> ensureUniquePresetIds(List<DrugPreset> presets) {
   final seenIds = <String>{};
 
@@ -1863,8 +2132,25 @@ List<DrugPreset> ensureUniquePresetIds(List<DrugPreset> presets) {
       timeUnit: preset.timeUnit,
       useWeight: preset.useWeight,
       note: preset.note,
+      rateIncrementMlPerHr: preset.rateIncrementMlPerHr,
     );
   }).toList();
+}
+
+List<DrugPreset> upsertPreset(List<DrugPreset> existing, DrugPreset edited) {
+  final presetError = validatePreset(edited);
+  if (presetError != null) {
+    throw ArgumentError.value(edited, 'edited', presetError);
+  }
+
+  final updated = [...existing];
+  final index = updated.indexWhere((item) => item.id == edited.id);
+  if (index >= 0) {
+    updated[index] = edited;
+  } else {
+    updated.add(edited);
+  }
+  return ensureUniquePresetIds(updated);
 }
 
 double timeUnitRateFactor(String timeUnit) {
@@ -1874,8 +2160,9 @@ double timeUnitRateFactor(String timeUnit) {
     case 'day':
       return 1 / 24;
     case 'hr':
-    default:
       return 1.0;
+    default:
+      throw ArgumentError.value(timeUnit, 'timeUnit', 'Unsupported time unit.');
   }
 }
 
@@ -1886,8 +2173,9 @@ String timeUnitFactorLabel(String timeUnit) {
     case 'day':
       return '1/24';
     case 'hr':
-    default:
       return '1';
+    default:
+      return '?';
   }
 }
 
@@ -1898,8 +2186,9 @@ String timeUnitDescription(String timeUnit) {
     case 'day':
       return '일당 × 1/24';
     case 'hr':
-    default:
       return '시간당 × 1';
+    default:
+      return '지원하지 않는 시간 기준';
   }
 }
 
@@ -2503,6 +2792,7 @@ class DrugPreset {
     required this.note,
     this.minDose,
     this.maxDose,
+    this.rateIncrementMlPerHr = 0.1,
   });
 
   final String id;
@@ -2516,6 +2806,7 @@ class DrugPreset {
   final String timeUnit;
   final bool useWeight;
   final String note;
+  final double rateIncrementMlPerHr;
 
   DrugPreset copy() {
     return DrugPreset(
@@ -2530,6 +2821,7 @@ class DrugPreset {
       timeUnit: timeUnit,
       useWeight: useWeight,
       note: note,
+      rateIncrementMlPerHr: rateIncrementMlPerHr,
     );
   }
 
@@ -2546,12 +2838,15 @@ class DrugPreset {
       'timeUnit': timeUnit,
       'useWeight': useWeight,
       'note': note,
+      'rateIncrementMlPerHr': rateIncrementMlPerHr,
     };
   }
 
   factory DrugPreset.fromJson(Map<String, dynamic> json) {
     return DrugPreset(
-      id: (json['id'] as String?) ?? uniqueId(),
+      id: json['id'] is String && (json['id'] as String).trim().isNotEmpty
+          ? json['id'] as String
+          : uniqueId(),
       name: (json['name'] as String?) ?? '',
       doseUnit: (json['doseUnit'] as String?) ?? '',
       minDose: (json['minDose'] as num?)?.toDouble(),
@@ -2559,10 +2854,34 @@ class DrugPreset {
       drugAmount: ((json['drugAmount'] as num?) ?? 0).toDouble(),
       drugUnit: (json['drugUnit'] as String?) ?? '',
       volumeMl: ((json['volumeMl'] as num?) ?? 0).toDouble(),
-      timeUnit: (json['timeUnit'] as String?) ?? 'min',
+      timeUnit: (json['timeUnit'] as String?) ?? '',
       useWeight: (json['useWeight'] as bool?) ?? true,
       note: (json['note'] as String?) ?? '',
+      rateIncrementMlPerHr: ((json['rateIncrementMlPerHr'] as num?) ?? 0.1).toDouble(),
     );
+  }
+
+  static DrugPreset? tryFromJson(Map<String, dynamic> json) {
+    const requiredStringFields = [
+      'name',
+      'doseUnit',
+      'drugUnit',
+      'timeUnit',
+      'note',
+    ];
+    if (requiredStringFields.any((field) => json[field] is! String) ||
+        json['drugAmount'] is! num ||
+        json['volumeMl'] is! num ||
+        json['useWeight'] is! bool ||
+        (json['id'] != null && json['id'] is! String) ||
+        (json['minDose'] != null && json['minDose'] is! num) ||
+        (json['maxDose'] != null && json['maxDose'] is! num) ||
+        (json['rateIncrementMlPerHr'] != null && json['rateIncrementMlPerHr'] is! num)) {
+      return null;
+    }
+
+    final preset = DrugPreset.fromJson(json);
+    return validatePreset(preset) == null ? preset : null;
   }
 }
 
@@ -2577,15 +2896,24 @@ String? readFirstAvailableString(
   SharedPreferences prefs,
   String primaryKey,
   List<String> legacyKeys,
+  {bool ignoreEmpty = false},
 ) {
   final primaryValue = prefs.getString(primaryKey);
-  if (primaryValue != null) return primaryValue;
+  if (primaryValue != null && (!ignoreEmpty || primaryValue.isNotEmpty)) return primaryValue;
 
   for (final legacyKey in legacyKeys) {
     final legacyValue = prefs.getString(legacyKey);
-    if (legacyValue != null) return legacyValue;
+    if (legacyValue != null && (!ignoreEmpty || legacyValue.isNotEmpty)) return legacyValue;
   }
 
+  return null;
+}
+
+String? readFirstLegacyString(SharedPreferences prefs, List<String> legacyKeys) {
+  for (final legacyKey in legacyKeys) {
+    final value = prefs.getString(legacyKey);
+    if (value != null && value.isNotEmpty) return value;
+  }
   return null;
 }
 
