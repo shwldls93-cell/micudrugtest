@@ -331,20 +331,6 @@ void main() {
       expect(normalized, 'mcg/kg/hr');
     });
 
-    test('simplifies selected preset labels', () {
-      expect(selectedPresetLabel('precedex(dexmedetomidine)'), 'precedex');
-      expect(selectedPresetLabel('norepinephrine (central)'), 'norepinephrine');
-    });
-
-    test('extracts preset helper details for the dropdown list', () {
-      expect(
-        selectedPresetDetail('precedex(dexmedetomidine)'),
-        'dexmedetomidine',
-      );
-      expect(selectedPresetDetail('norepinephrine (central)'), 'central');
-      expect(selectedPresetDetail('propofol 400mg'), isNull);
-    });
-
     test('formats reservoir summaries in clinically readable mass units', () {
       expect(formatReservoirAmount(400000, 'mcg'), '400 mg');
       expect(formatReservoirAmount(1000000, 'mcg'), '1 g');

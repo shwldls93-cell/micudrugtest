@@ -10,7 +10,6 @@ const snoobiInk = Color(0xFF171717);
 const snoobiCream = Color(0xFFFFF8B9);
 const snoobiBlue = Color(0xFFAED9EC);
 const snoobiPink = Color(0xFFFFA7D4);
-const snoobiRed = Color(0xFFE75D55);
 
 class SnoobiAsset {
   const SnoobiAsset._();
@@ -170,20 +169,16 @@ class ScallopedCard extends StatelessWidget {
   const ScallopedCard({
     required this.child,
     this.padding = const EdgeInsets.all(18),
-    this.selected = false,
     super.key,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
-  final bool selected;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _ScallopedPainter(
-        color: selected ? const Color(0xFFFFF39D) : snoobiCream,
-      ),
+      painter: _ScallopedPainter(color: snoobiCream),
       child: Padding(padding: padding, child: child),
     );
   }
@@ -525,57 +520,12 @@ OutlineInputBorder roundedInputBorder({
   );
 }
 
-RoundedRectangleBorder roundedBorder([double radius = 12]) {
-  return RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(radius),
-    side: const BorderSide(color: snoobiInk, width: 1.5),
-  );
-}
-
 BoxDecoration roundedDecoration({required Color color, double radius = 12}) {
   return BoxDecoration(
     color: color,
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(color: snoobiInk, width: 1.5),
   );
-}
-
-class SoftBottomNav extends StatelessWidget {
-  const SoftBottomNav({
-    required this.selectedTab,
-    required this.onTap,
-    super.key,
-  });
-
-  final String selectedTab;
-  final ValueChanged<String> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          color: snoobiPaper,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: snoobiInk, width: 1.4),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _BottomNavItem(
-              icon: Icons.home_rounded,
-              label: 'Home',
-              selected: selectedTab == 'home',
-              onTap: () => onTap('home'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _TitleStack extends StatelessWidget {
@@ -656,48 +606,6 @@ class _DecorationAsset extends StatelessWidget {
     return Opacity(
       opacity: opacity,
       child: Image.asset(path, width: size, height: size, fit: BoxFit.contain),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  const _BottomNavItem({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? snoobiInk : const Color(0xFF8A8A8A);
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

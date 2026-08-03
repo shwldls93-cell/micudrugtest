@@ -331,17 +331,6 @@ String timeUnitFactorLabelForPreset(DrugPreset preset) {
   return timeUnitFactorLabel(resolveDoseTimeUnitId(preset));
 }
 
-String timeUnitDescription(String timeUnitId) {
-  switch (doseTimeUnitFromId(timeUnitId)) {
-    case DoseTimeUnit.min:
-      return '분당 × 60';
-    case DoseTimeUnit.day:
-      return '일당 × 1/24';
-    case DoseTimeUnit.hr:
-      return '시간당 × 1';
-  }
-}
-
 DoseTimeUnit doseTimeUnitFromId(String timeUnitId) {
   switch (timeUnitId) {
     case 'min':
