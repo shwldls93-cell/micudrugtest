@@ -360,6 +360,25 @@ void main() {
       );
     });
 
+    test('labels and calculates the MICU 1 g/50 mL propofol correctly', () {
+      final propofol = defaultMicuPresets().firstWhere(
+        (preset) => preset.name == 'propofol 1g/50mL',
+      );
+
+      expect(presetDropdownLabel(propofol.name), 'propofol 1g/50mL');
+      expect(propofol.drugAmount, 1);
+      expect(propofol.drugUnit, 'g');
+      expect(propofol.volumeMl, 50);
+      expect(propofol.doseUnit, 'mcg/kg/min');
+      expect(propofol.minDose, 10);
+      expect(propofol.maxDose, 40);
+      expect(validatePreset(propofol), isNull);
+      expect(
+        calculateRate(dose: 10, weight: 70, preset: propofol),
+        closeTo(2.1, 0.000001),
+      );
+    });
+
     test(
       'uses explicit pump increments and detects post-rounding dose warnings',
       () {
@@ -562,6 +581,55 @@ void main() {
       );
 
       expect(migrated['micu']!.single.name, 'propofol 400mg');
+    });
+
+    test('adds the new MICU propofol once during the v2-to-v3 migration', () {
+      final oldMicuPresets = defaultMicuPresets()
+          .where((preset) => preset.name != 'propofol 1g/50mL')
+          .toList();
+
+      final migrated = migratePresetMap(
+        legacyRaw: jsonEncode({
+          'micu': oldMicuPresets.map((preset) => preset.toJson()).toList(),
+        }),
+        addMissingMicuPropofol1g50Ml: true,
+      );
+
+      expect(
+        migrated['micu']!
+            .where((preset) => preset.name == 'propofol 1g/50mL'),
+        hasLength(1),
+      );
+      expect(
+        migrated['micu']!.where((preset) => preset.name == 'propofol 400mg'),
+        hasLength(1),
+      );
+    });
+
+    test('does not duplicate an equivalent custom 1 g/50 mL propofol', () {
+      final equivalent = DrugPreset(
+        id: 'custom-propofol',
+        name: 'Propofol custom 1 g',
+        doseUnit: 'mcg/kg/min',
+        drugAmount: 1000,
+        drugUnit: 'mg',
+        volumeMl: 50,
+        timeUnit: 'min',
+        useWeight: true,
+        minDose: 10,
+        maxDose: 40,
+        note: 'custom',
+      );
+
+      final migrated = migratePresetMap(
+        legacyRaw: jsonEncode({
+          'micu': [equivalent.toJson()],
+        }),
+        addMissingMicuPropofol1g50Ml: true,
+      );
+
+      expect(migrated['micu'], hasLength(1));
+      expect(migrated['micu']!.single.id, 'custom-propofol');
     });
 
     test(

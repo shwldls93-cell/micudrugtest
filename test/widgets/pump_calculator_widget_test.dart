@@ -26,7 +26,7 @@ void main() {
                   ),
         );
 
-    await tester.enterText(searchField, 'propofol');
+    await tester.enterText(searchField, 'propofol 400mg');
     await tester.pumpAndSettle();
     expect(find.textContaining('propofol 400'), findsWidgets);
     await tester.ensureVisible(searchResult());
@@ -66,6 +66,48 @@ void main() {
     expect(tester.widget<EditableText>(doseInput).controller.text, isEmpty);
     expect(find.text('--'), findsOneWidget);
     expect(find.textContaining('처방 용량을 다시 입력'), findsOneWidget);
+  });
+
+  testWidgets('MICU 1 g/50 mL propofol calculates 2.1 mL/hr at 70 kg', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const JjonddeukCalculatorApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('MICU'));
+    await tester.pumpAndSettle();
+
+    final searchField = find.byKey(const Key('preset-search-field'));
+    await tester.enterText(searchField, 'propofol 1g/50mL');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('propofol 1g/50mL'), findsWidgets);
+
+    final searchResult = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith(
+                'preset-search-result-',
+              ),
+    );
+    expect(searchResult, findsOneWidget);
+    await tester.ensureVisible(searchResult);
+    await tester.tap(searchResult);
+    await tester.pumpAndSettle();
+
+    final weightInput = find.descendant(
+      of: find.byKey(const Key('weight-field')),
+      matching: find.byType(EditableText),
+    );
+    final doseInput = find.descendant(
+      of: find.byKey(const Key('dose-field')),
+      matching: find.byType(EditableText),
+    );
+    await tester.enterText(weightInput, '70');
+    await tester.enterText(doseInput, '10');
+    await tester.pumpAndSettle();
+
+    expect(find.text('2.1'), findsOneWidget);
+    expect(find.text('mL/hr'), findsOneWidget);
   });
 
   testWidgets('preset editor actions do not overflow on a narrow phone', (
