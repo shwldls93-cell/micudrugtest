@@ -345,6 +345,20 @@ void main() {
       expect(selectedPresetDetail('propofol 400mg'), isNull);
     });
 
+    test('formats reservoir summaries in clinically readable mass units', () {
+      expect(formatReservoirAmount(400000, 'mcg'), '400 mg');
+      expect(formatReservoirAmount(1000000, 'mcg'), '1 g');
+      expect(
+        reservoirSummary(
+          drugAmount: 1,
+          drugUnit: 'g',
+          volumeMl: 50,
+          doseUnit: 'mcg/kg/min',
+        ),
+        '1 g / 50 mL · mcg/kg/min',
+      );
+    });
+
     test('labels and calculates the MICU 400 mg propofol preset correctly', () {
       final propofol = defaultMicuPresets().firstWhere(
         (preset) => preset.name == 'propofol 400mg',

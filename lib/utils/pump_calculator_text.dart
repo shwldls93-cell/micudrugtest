@@ -88,3 +88,34 @@ String extractAdditionalNote(String note) {
 
   return extraLines.join('\n');
 }
+
+String formatReservoirAmount(double amount, String unit) {
+  final normalizedUnit = unit.trim().toLowerCase();
+  if (normalizedUnit == 'mcg') {
+    if (amount >= 1000000) {
+      return '${_formatDisplayNumber(amount / 1000000)} g';
+    }
+    if (amount >= 1000) {
+      return '${_formatDisplayNumber(amount / 1000)} mg';
+    }
+  }
+  if (normalizedUnit == 'mg' && amount >= 1000) {
+    return '${_formatDisplayNumber(amount / 1000)} g';
+  }
+  return '${_formatDisplayNumber(amount)} $unit';
+}
+
+String reservoirSummary({
+  required double drugAmount,
+  required String drugUnit,
+  required double volumeMl,
+  required String doseUnit,
+}) {
+  return '${formatReservoirAmount(drugAmount, drugUnit)} / '
+      '${_formatDisplayNumber(volumeMl)} mL · $doseUnit';
+}
+
+String _formatDisplayNumber(double value) {
+  final text = value.toStringAsFixed(3);
+  return text.replaceFirst(RegExp(r'\.?0+$'), '');
+}

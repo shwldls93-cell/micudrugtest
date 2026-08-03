@@ -42,7 +42,6 @@ class JjonddeukCalculatorApp extends StatelessWidget {
           secondary: const Color(0xFFFFD9E4),
           surface: const Color(0xFFFFFFFF),
         ),
-        fontFamily: 'Pretendard',
       ),
       home: const PumpCalculatorPage(),
     );
@@ -75,7 +74,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   final _editorFormKey = GlobalKey<FormState>();
   final _scrollController = ScrollController();
   final _landingSectionKey = GlobalKey();
-  final _editorSectionKey = GlobalKey();
 
   late Map<String, List<DrugPreset>> _presetsByDepartment;
   String? _selectedDepartmentId;
@@ -88,6 +86,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   bool _isLoading = true;
   String _selectedTimeUnit = 'min';
   String _presetSearchQuery = '';
+  bool _isPresetSearchOpen = false;
   bool _isCreatingPreset = false;
 
   @override
@@ -141,8 +140,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
           savedDepartment != null && mergedMap.containsKey(savedDepartment)
               ? savedDepartment
               : null;
-      _selectedPresetId =
-          _currentPresets.isNotEmpty ? _currentPresets.first.id : null;
+      _selectedPresetId = null;
       _syncEditorWithSelectedPreset();
       _isLoading = false;
     });
@@ -180,12 +178,12 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     for (final preset in _currentPresets) {
       if (preset.id == _selectedPresetId) return preset;
     }
-    return _currentPresets.isNotEmpty ? _currentPresets.first : null;
+    return null;
   }
 
   List<DrugPreset> get _presetSearchResults {
     final normalizedQuery = normalizeSearchText(_presetSearchQuery);
-    if (normalizedQuery.isEmpty) return const [];
+    if (normalizedQuery.isEmpty) return _currentPresets;
 
     final prefixMatches = <DrugPreset>[];
     final containsMatches = <DrugPreset>[];
@@ -220,8 +218,9 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     });
   }
 
-  void _clearPresetSearchState() {
+  void _clearPresetSearchState({bool closePicker = true}) {
     _presetSearchQuery = '';
+    if (closePicker) _isPresetSearchOpen = false;
   }
 
   void _clearPresetSearchField() {
@@ -233,7 +232,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
   void _selectDepartment(String departmentId) {
     setState(() {
       _selectedDepartmentId = departmentId;
-      _selectedPresetId = _presetsByDepartment[departmentId]?.firstOrNull?.id;
+      _selectedPresetId = null;
       _clearPresetSearchState();
       _doseController.clear();
       _weightController.clear();
@@ -253,6 +252,20 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
       _isCreatingPreset = false;
       _syncEditorWithSelectedPreset();
       _applyDefaultResult('약물이 변경되어 처방 용량을 다시 입력해 주세요.');
+    });
+    _clearPresetSearchField();
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  void _startNewPatient() {
+    setState(() {
+      _selectedPresetId = null;
+      _doseController.clear();
+      _weightController.clear();
+      _clearPresetSearchState();
+      _isCreatingPreset = false;
+      _syncEditorWithSelectedPreset();
+      _applyDefaultResult('새 환자 입력을 시작합니다. 약물을 선택해 주세요.');
     });
     _clearPresetSearchField();
     FocusManager.instance.primaryFocus?.unfocus();
@@ -357,7 +370,10 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
       setState(() {
         _resultValue = formatCalculatedRate(roundedRate, preset);
-        _resultDetail = rangeWarning ?? '자동 계산된 펌프 설정값입니다.';
+        _resultDetail = rangeWarning == null
+            ? '원계산 ${formatNumber(rate)} mL/hr를 펌프 단위 '
+                '${formatNumber(preset.rateIncrementMlPerHr)} mL/hr로 반올림한 결과입니다.'
+            : '권장 범위 밖입니다. $rangeWarning 처방과 약물 설정을 다시 확인해 주세요.';
         _resultError = rangeWarning != null;
         _resultDoseWarning = rangeWarning != null;
       });
@@ -460,8 +476,9 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
     setState(() {
       _presetsByDepartment[departmentId] = nextList;
-      _selectedPresetId = nextList.first.id;
+      _selectedPresetId = null;
       _doseController.clear();
+      _weightController.clear();
       _isCreatingPreset = false;
       _syncEditorWithSelectedPreset();
       _applyDefaultResult(
@@ -485,8 +502,9 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     final resetList = preset_data.defaultPresetMap()[departmentId]!;
     setState(() {
       _presetsByDepartment[departmentId] = resetList;
-      _selectedPresetId = resetList.first.id;
+      _selectedPresetId = null;
       _doseController.clear();
+      _weightController.clear();
       _isCreatingPreset = false;
       _syncEditorWithSelectedPreset();
       _applyDefaultResult(
@@ -551,8 +569,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                       Container(
                         key: _landingSectionKey,
                         child: LandingSection(
-                          selectedDepartmentLabel:
-                              _currentDepartment?.label ?? '선택 전',
                           onSelectDepartment: _selectDepartment,
                           selectedDepartmentId: _selectedDepartmentId,
                         ),
@@ -560,7 +576,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                     else
                       CalculatorSection(
                         departmentLabel: _currentDepartment?.label ?? '-',
-                        presets: _currentPresets,
                         selectedPresetId: _selectedPresetId,
                         selectedPreset: _selectedPreset,
                         doseController: _doseController,
@@ -573,9 +588,15 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                         presetSearchController: _presetSearchController,
                         presetSearchQuery: _presetSearchQuery,
                         presetSearchResults: _presetSearchResults,
-                        onPresetChanged: _changeSelectedPreset,
+                        showPresetSearchResults: _isPresetSearchOpen,
+                        onPresetSearchTap: () {
+                          setState(() => _isPresetSearchOpen = true);
+                        },
                         onPresetSearchChanged: (value) {
-                          setState(() => _presetSearchQuery = value);
+                          setState(() {
+                            _presetSearchQuery = value;
+                            _isPresetSearchOpen = true;
+                          });
                         },
                         onPresetSearchSelected: (presetId) {
                           _changeSelectedPreset(presetId);
@@ -583,6 +604,7 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                         onClearPresetSearch: () {
                           setState(() => _clearPresetSearchState());
                           _clearPresetSearchField();
+                          FocusManager.instance.primaryFocus?.unfocus();
                         },
                         onChangeDepartment: () {
                           setState(() {
@@ -597,8 +619,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                           _clearPresetSearchField();
                           _saveState();
                         },
-                        onResetPresets: _resetDepartmentPresets,
-                        editor: _buildEditorCard(),
+                        onStartNewPatient: _startNewPatient,
+                        onOpenSettings: _showPresetManager,
                         onDoseChanged: _autoCalculate,
                         onWeightChanged: _autoCalculate,
                       ),
@@ -612,184 +634,258 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     );
   }
 
-  Widget _buildEditorCard() {
-    return Container(
-      key: _editorSectionKey,
-      child: ExpansionTile(
-        collapsedShape: roundedBorder(),
-        shape: roundedBorder(),
-        backgroundColor: const Color(0xF7FFFFFF),
-        collapsedBackgroundColor: const Color(0xF0FFFFFF),
-        title: const FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            '약물 계산식 추가/수정/비고 관리',
-            maxLines: 1,
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
-          ),
-        ),
-        childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        children: [
-          Form(
-            key: _editorFormKey,
-            child: Column(
-              children: [
-                Row(
+  Future<void> _showPresetManager() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: snoobiPaper,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, refreshSheet) => FractionallySizedBox(
+          heightFactor: 0.94,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 12, 8),
+                child: Row(
                   children: [
-                    Expanded(
+                    const Expanded(
                       child: Text(
-                        _isCreatingPreset
-                            ? '새 계산식 작성 중'
-                            : '수정 대상: ${_selectedPreset?.name ?? '-'}',
-                        style: const TextStyle(
+                        '약물 설정 관리',
+                        style: TextStyle(
+                          fontSize: 20,
                           fontWeight: FontWeight.w900,
                           color: snoobiInk,
                         ),
                       ),
                     ),
-                    OutlinedButton.icon(
-                      onPressed: _startNewPreset,
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text('새 계산식'),
+                    IconButton(
+                      tooltip: '설정 닫기',
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      icon: const Icon(Icons.close_rounded),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    EditorField(
-                      controller: _nameController,
-                      label: '약물명',
-                      width: 260,
-                    ),
-                    EditorField(
-                      controller: _doseUnitController,
-                      label: '목표 용량 단위',
-                      width: 260,
-                    ),
-                    EditorField(
-                      controller: _minDoseController,
-                      label: '최소 용량 (선택)',
-                      width: 220,
-                      isOptional: true,
-                      isNumeric: true,
-                      keyboardType: TextInputType.number,
-                    ),
-                    EditorField(
-                      controller: _maxDoseController,
-                      label: '최대 용량 (선택)',
-                      width: 220,
-                      isOptional: true,
-                      isNumeric: true,
-                      keyboardType: TextInputType.number,
-                    ),
-                    EditorField(
-                      controller: _drugAmountController,
-                      label: '총 약물량',
-                      width: 220,
-                      isNumeric: true,
-                      mustBePositive: true,
-                      keyboardType: TextInputType.number,
-                    ),
-                    EditorField(
-                      controller: _drugUnitController,
-                      label: '총 약물량 단위',
-                      width: 220,
-                    ),
-                    EditorField(
-                      controller: _volumeController,
-                      label: '최종 부피 (mL)',
-                      width: 220,
-                      isNumeric: true,
-                      mustBePositive: true,
-                      keyboardType: TextInputType.number,
-                    ),
-                    EditorField(
-                      controller: _rateIncrementController,
-                      label: '펌프 반올림 단위 (mL/hr)',
-                      width: 220,
-                      isNumeric: true,
-                      mustBePositive: true,
-                      keyboardType: TextInputType.number,
-                    ),
-                    SizedBox(
-                      width: 220,
-                      child: DropdownButtonFormField<String>(
-                        key: ValueKey(_selectedTimeUnit),
-                        initialValue: _selectedTimeUnit,
-                        decoration: editorDecoration('시간 기준'),
-                        items: const [
-                          DropdownMenuItem(value: 'min', child: Text('분당 처방')),
-                          DropdownMenuItem(value: 'hr', child: Text('시간당 처방')),
-                          DropdownMenuItem(value: 'day', child: Text('일당 처방')),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => _selectedTimeUnit = value);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _noteController,
-                  maxLines: 4,
-                  decoration: editorDecoration(
-                    '비고 / Mix 공식 / Loading dose / 특이사항',
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                  child: _buildPresetManagerContent(
+                    sheetContext: sheetContext,
+                    refreshSheet: refreshSheet,
                   ),
                 ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  value: _useWeight,
-                  title: const Text('체중 기반 계산 사용'),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                  onChanged: (value) => setState(() => _useWeight = value),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton(
-                      onPressed: _savePreset,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF111827),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                      child: Text(_isCreatingPreset ? '새 약물 저장' : '선택 약물 수정'),
-                    ),
-                    OutlinedButton(
-                      onPressed:
-                          _isCreatingPreset ? null : _deleteSelectedPreset,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFB42318),
-                        side: const BorderSide(color: Color(0xFFF04438)),
-                      ),
-                      child: const Text('선택 약물 삭제'),
-                    ),
-                  ],
-                ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPresetManagerContent({
+    required BuildContext sheetContext,
+    required StateSetter refreshSheet,
+  }) {
+    void refreshBoth(VoidCallback update) {
+      setState(update);
+      refreshSheet(() {});
+    }
+
+    return Form(
+      key: _editorFormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: roundedDecoration(color: const Color(0xFFE8F7FF)),
+            child: const Text(
+              '수정·추가한 계산식은 이 브라우저의 현재 기기에만 저장됩니다. '
+              '브라우저 데이터를 삭제하면 사라질 수 있어요.',
+              style: TextStyle(
+                fontSize: 13.5,
+                height: 1.4,
+                fontWeight: FontWeight.w800,
+                color: snoobiInk,
+              ),
             ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              OutlinedButton.icon(
+                key: const Key('reset-presets-button'),
+                onPressed: () async {
+                  await _resetDepartmentPresets();
+                  if (sheetContext.mounted) refreshSheet(() {});
+                },
+                icon: const Icon(Icons.restore_rounded, size: 18),
+                label: const Text('부서 기본값 복원'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  _startNewPreset();
+                  refreshSheet(() {});
+                },
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('새 계산식'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            _isCreatingPreset
+                ? '새 계산식 작성 중'
+                : _selectedPreset == null
+                    ? '수정할 약물을 계산 화면에서 먼저 선택해 주세요.'
+                    : '수정 대상: ${_selectedPreset!.name}',
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              color: snoobiInk,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              EditorField(
+                controller: _nameController,
+                label: '약물명',
+                width: 280,
+              ),
+              EditorField(
+                controller: _doseUnitController,
+                label: '목표 용량 단위',
+                width: 280,
+              ),
+              EditorField(
+                controller: _minDoseController,
+                label: '최소 용량 (선택)',
+                width: 240,
+                isOptional: true,
+                isNumeric: true,
+                keyboardType: TextInputType.number,
+              ),
+              EditorField(
+                controller: _maxDoseController,
+                label: '최대 용량 (선택)',
+                width: 240,
+                isOptional: true,
+                isNumeric: true,
+                keyboardType: TextInputType.number,
+              ),
+              EditorField(
+                controller: _drugAmountController,
+                label: '총 약물량',
+                width: 240,
+                isNumeric: true,
+                mustBePositive: true,
+                keyboardType: TextInputType.number,
+              ),
+              EditorField(
+                controller: _drugUnitController,
+                label: '총 약물량 단위',
+                width: 240,
+              ),
+              EditorField(
+                controller: _volumeController,
+                label: '최종 부피 (mL)',
+                width: 240,
+                isNumeric: true,
+                mustBePositive: true,
+                keyboardType: TextInputType.number,
+              ),
+              EditorField(
+                controller: _rateIncrementController,
+                label: '펌프 반올림 단위 (mL/hr)',
+                width: 240,
+                isNumeric: true,
+                mustBePositive: true,
+                keyboardType: TextInputType.number,
+              ),
+              SizedBox(
+                width: 240,
+                child: DropdownButtonFormField<String>(
+                  key: ValueKey(_selectedTimeUnit),
+                  initialValue: _selectedTimeUnit,
+                  decoration: editorDecoration('시간 기준'),
+                  items: const [
+                    DropdownMenuItem(value: 'min', child: Text('분당 처방')),
+                    DropdownMenuItem(value: 'hr', child: Text('시간당 처방')),
+                    DropdownMenuItem(value: 'day', child: Text('일당 처방')),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    refreshBoth(() => _selectedTimeUnit = value);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _noteController,
+            maxLines: 5,
+            decoration: editorDecoration(
+              '비고 / Mix 공식 / Loading dose / 특이사항',
+            ),
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            value: _useWeight,
+            title: const Text('체중 기반 계산 사용'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            onChanged: (value) => refreshBoth(() => _useWeight = value),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              FilledButton(
+                onPressed: (_isCreatingPreset || _selectedPreset != null)
+                    ? () async {
+                        await _savePreset();
+                        if (sheetContext.mounted) refreshSheet(() {});
+                      }
+                    : null,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF111827),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(140, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+                child: Text(
+                  _isCreatingPreset ? '새 약물 저장' : '선택 약물 수정',
+                ),
+              ),
+              OutlinedButton(
+                onPressed: (!_isCreatingPreset && _selectedPreset != null)
+                    ? () async {
+                        await _deleteSelectedPreset();
+                        if (sheetContext.mounted) refreshSheet(() {});
+                      }
+                    : null,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFB42318),
+                  side: const BorderSide(color: Color(0xFFF04438)),
+                  minimumSize: const Size(140, 48),
+                ),
+                child: const Text('선택 약물 삭제'),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-}
-
-extension FirstOrNullExtension<T> on List<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

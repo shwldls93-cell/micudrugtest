@@ -58,7 +58,7 @@ class CloudHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final compact = titleSize < 40;
-    final height = compact ? 246.0 : 360.0;
+    final height = compact ? 178.0 : 300.0;
 
     return SizedBox(
       height: height,
@@ -67,45 +67,45 @@ class CloudHeader extends StatelessWidget {
         children: [
           Positioned.fill(child: CustomPaint(painter: _CloudPainter())),
           Positioned(
-            left: compact ? 22 : 28,
-            top: compact ? 36 : 40,
+              left: compact ? 18 : 28,
+              top: compact ? 18 : 34,
             child: Image.asset(
               SnoobiAsset.catMagnifier,
-              width: compact ? 88 : 112,
+              width: compact ? 56 : 96,
               fit: BoxFit.contain,
             ),
           ),
           Positioned(
-            right: compact ? 16 : 26,
-            top: compact ? 74 : 86,
+              right: compact ? 14 : 26,
+              top: compact ? 28 : 70,
             child: Image.asset(
               SnoobiAsset.dogMegaphone,
-              width: compact ? 88 : 112,
+              width: compact ? 56 : 96,
               fit: BoxFit.contain,
             ),
           ),
           Positioned(
-            left: compact ? 132 : 142,
-            top: compact ? 100 : 144,
+              left: compact ? 106 : 142,
+              top: compact ? 48 : 124,
             child: _DecorationAsset(
               path: SnoobiAsset.star,
-              size: compact ? 24 : 31,
+              size: compact ? 16 : 28,
             ),
           ),
           Positioned(
-            right: compact ? 58 : 46,
-            top: compact ? 78 : 98,
+              right: compact ? 62 : 46,
+              top: compact ? 30 : 86,
             child: _DecorationAsset(
               path: SnoobiAsset.star,
-              size: compact ? 22 : 28,
+              size: compact ? 15 : 25,
             ),
           ),
           Positioned(
-            left: compact ? 18 : 18,
-            top: compact ? 130 : 130,
+              left: compact ? 10 : 18,
+              top: compact ? 72 : 112,
             child: _DecorationAsset(
               path: SnoobiAsset.bubbleSingle,
-              size: compact ? 36 : 44,
+              size: compact ? 24 : 40,
               opacity: 0.9,
             ),
           ),
@@ -114,21 +114,21 @@ class CloudHeader extends StatelessWidget {
             bottom: compact ? -4 : 18,
             child: _DecorationAsset(
               path: SnoobiAsset.bubbles,
-              size: compact ? 74 : 86,
+              size: compact ? 44 : 72,
               opacity: 0.92,
             ),
           ),
           Positioned(
             left: 0,
             right: 0,
-            top: compact ? 54 : 70,
+              top: compact ? 20 : 54,
             child: Center(child: _TitleStack(fontSize: titleSize)),
           ),
           if (subtitle != null)
             Positioned(
               left: 34,
               right: 34,
-              bottom: footer == null ? 10 : 56,
+              bottom: footer == null ? 10 : (compact ? 62 : 56),
               child: Text(
                 subtitle!,
                 textAlign: TextAlign.center,
@@ -140,7 +140,12 @@ class CloudHeader extends StatelessWidget {
               ),
             ),
           if (footer != null)
-            Positioned(left: 22, right: 22, bottom: 34, child: footer!),
+            Positioned(
+              left: compact ? 12 : 22,
+              right: compact ? 12 : 22,
+              bottom: compact ? 14 : 26,
+              child: footer!,
+            ),
         ],
       ),
     );
@@ -250,14 +255,40 @@ class CalculatorRow extends StatelessWidget {
       label: '$label 영역',
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 7),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(width: 104, child: LabelPill(text: label)),
-            const SizedBox(width: 10),
-            Expanded(child: child),
-            if (suffix != null) ...[const SizedBox(width: 8), suffix!],
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final useStackedLayout = constraints.maxWidth < 350;
+            final inputRow = Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: child),
+                if (suffix != null) ...[
+                  const SizedBox(width: 8),
+                  suffix!,
+                ],
+              ],
+            );
+
+            if (useStackedLayout) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(width: 112, child: LabelPill(text: label)),
+                  const SizedBox(height: 7),
+                  inputRow,
+                ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(width: 104, child: LabelPill(text: label)),
+                const SizedBox(width: 10),
+                Expanded(child: inputRow),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -303,17 +334,16 @@ class UnitLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CalculatorSuffixSlot(
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(
-          text,
-          maxLines: 1,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: calculatorUnitFontSize,
-            fontWeight: FontWeight.w900,
-            color: snoobiInk,
-          ),
+      child: Text(
+        text.replaceAll('/', '/\u200B'),
+        maxLines: 2,
+        overflow: TextOverflow.visible,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: calculatorUnitFontSize,
+          height: 1.1,
+          fontWeight: FontWeight.w900,
+          color: snoobiInk,
         ),
       ),
     );
