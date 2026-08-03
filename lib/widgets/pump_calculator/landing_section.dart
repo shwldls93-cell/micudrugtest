@@ -7,30 +7,10 @@ import 'shared_widgets.dart';
 class LandingSection extends StatelessWidget {
   const LandingSection({
     required this.onSelectDepartment,
-    required this.selectedDepartmentId,
     super.key,
   });
 
   final ValueChanged<String> onSelectDepartment;
-  final String? selectedDepartmentId;
-
-  @override
-  Widget build(BuildContext context) {
-    return _LandingSectionBody(
-      onSelectDepartment: onSelectDepartment,
-      selectedDepartmentId: selectedDepartmentId,
-    );
-  }
-}
-
-class _LandingSectionBody extends StatelessWidget {
-  const _LandingSectionBody({
-    required this.onSelectDepartment,
-    required this.selectedDepartmentId,
-  });
-
-  final ValueChanged<String> onSelectDepartment;
-  final String? selectedDepartmentId;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +36,6 @@ class _LandingSectionBody extends StatelessWidget {
                   for (final department in preset_data.defaultDepartments)
                     DepartmentCard(
                       department: department,
-                      selected: selectedDepartmentId == department.id,
                       useHorizontalLayout: useSingleColumn,
                       onTap: () => onSelectDepartment(department.id),
                     ),
@@ -74,14 +53,12 @@ class _LandingSectionBody extends StatelessWidget {
 class DepartmentCard extends StatelessWidget {
   const DepartmentCard({
     required this.department,
-    required this.selected,
     required this.useHorizontalLayout,
     required this.onTap,
     super.key,
   });
 
   final DepartmentPreset department;
-  final bool selected;
   final bool useHorizontalLayout;
   final VoidCallback onTap;
 
@@ -96,7 +73,6 @@ class DepartmentCard extends StatelessWidget {
           width: double.infinity,
           height: double.infinity,
           child: ScallopedCard(
-            selected: selected,
             padding: useHorizontalLayout
                 ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
                 : const EdgeInsets.fromLTRB(10, 18, 10, 14),
@@ -111,7 +87,6 @@ class DepartmentCard extends StatelessWidget {
                       Expanded(
                         child: _DepartmentCardText(
                           department: department,
-                          selected: selected,
                           textAlign: TextAlign.left,
                         ),
                       ),
@@ -127,7 +102,6 @@ class DepartmentCard extends StatelessWidget {
                       const SizedBox(height: 5),
                       _DepartmentCardText(
                         department: department,
-                        selected: selected,
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -142,12 +116,10 @@ class DepartmentCard extends StatelessWidget {
 class _DepartmentCardText extends StatelessWidget {
   const _DepartmentCardText({
     required this.department,
-    required this.selected,
     required this.textAlign,
   });
 
   final DepartmentPreset department;
-  final bool selected;
   final TextAlign textAlign;
 
   @override
@@ -165,7 +137,7 @@ class _DepartmentCardText extends StatelessWidget {
             fontSize: 20,
             height: 1.05,
             fontWeight: FontWeight.w900,
-            color: selected ? const Color(0xFF0F6784) : snoobiInk,
+            color: snoobiInk,
           ),
         ),
         const SizedBox(height: 3),

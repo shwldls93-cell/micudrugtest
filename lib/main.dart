@@ -72,8 +72,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
   final _calculatorFormKey = GlobalKey<FormState>();
   final _editorFormKey = GlobalKey<FormState>();
-  final _scrollController = ScrollController();
-  final _landingSectionKey = GlobalKey();
 
   late Map<String, List<DrugPreset>> _presetsByDepartment;
   String? _selectedDepartmentId;
@@ -110,7 +108,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     _volumeController.dispose();
     _rateIncrementController.dispose();
     _noteController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -218,9 +215,9 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     });
   }
 
-  void _clearPresetSearchState({bool closePicker = true}) {
+  void _clearPresetSearchState() {
     _presetSearchQuery = '';
-    if (closePicker) _isPresetSearchOpen = false;
+    _isPresetSearchOpen = false;
   }
 
   void _clearPresetSearchField() {
@@ -554,27 +551,15 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
     return Scaffold(
       backgroundColor: snoobiSky,
-      body: Container(
-        color: snoobiSky,
-        child: SafeArea(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(10, 12, 10, 28),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: calculatorMaxWidth),
-                child: Column(
-                  children: [
-                    if (_selectedDepartmentId == null)
-                      Container(
-                        key: _landingSectionKey,
-                        child: LandingSection(
-                          onSelectDepartment: _selectDepartment,
-                          selectedDepartmentId: _selectedDepartmentId,
-                        ),
-                      )
-                    else
-                      CalculatorSection(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(10, 12, 10, 28),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: calculatorMaxWidth),
+              child: _selectedDepartmentId == null
+                  ? LandingSection(onSelectDepartment: _selectDepartment)
+                  : CalculatorSection(
                         departmentLabel: _currentDepartment?.label ?? '-',
                         selectedPresetId: _selectedPresetId,
                         selectedPreset: _selectedPreset,
@@ -624,9 +609,6 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
                         onDoseChanged: _autoCalculate,
                         onWeightChanged: _autoCalculate,
                       ),
-                  ],
-                ),
-              ),
             ),
           ),
         ),
