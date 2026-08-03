@@ -123,7 +123,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('4.2'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('new-patient-button')));
+    final newPatientButton = find.byKey(const Key('new-patient-button'));
+    await tester.ensureVisible(newPatientButton);
+    await tester.tap(newPatientButton);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('medication-required-banner')), findsOneWidget);

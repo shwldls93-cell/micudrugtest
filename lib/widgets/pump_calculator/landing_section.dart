@@ -42,21 +42,27 @@ class _LandingSectionBody extends StatelessWidget {
           const SizedBox(height: 14),
           const _PickBanner(),
           const SizedBox(height: 20),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 18,
-            crossAxisSpacing: 18,
-            childAspectRatio: 1.35,
-            children: [
-              for (final department in preset_data.defaultDepartments)
-                DepartmentCard(
-                  department: department,
-                  selected: selectedDepartmentId == department.id,
-                  onTap: () => onSelectDepartment(department.id),
-                ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final useSingleColumn = constraints.maxWidth < 360;
+              return GridView.count(
+                crossAxisCount: useSingleColumn ? 1 : 2,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: useSingleColumn ? 12 : 18,
+                crossAxisSpacing: 18,
+                childAspectRatio: useSingleColumn ? 2.65 : 1.35,
+                children: [
+                  for (final department in preset_data.defaultDepartments)
+                    DepartmentCard(
+                      department: department,
+                      selected: selectedDepartmentId == department.id,
+                      useHorizontalLayout: useSingleColumn,
+                      onTap: () => onSelectDepartment(department.id),
+                    ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 4),
         ],
@@ -69,12 +75,14 @@ class DepartmentCard extends StatelessWidget {
   const DepartmentCard({
     required this.department,
     required this.selected,
+    required this.useHorizontalLayout,
     required this.onTap,
     super.key,
   });
 
   final DepartmentPreset department;
   final bool selected;
+  final bool useHorizontalLayout;
   final VoidCallback onTap;
 
   @override
@@ -89,38 +97,91 @@ class DepartmentCard extends StatelessWidget {
           height: double.infinity,
           child: ScallopedCard(
             selected: selected,
-            padding: const EdgeInsets.fromLTRB(10, 18, 10, 14),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(department.icon, style: const TextStyle(fontSize: 25)),
-                const SizedBox(height: 5),
-                Text(
-                  department.label,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: selected ? const Color(0xFF0F6784) : snoobiInk,
+            padding: useHorizontalLayout
+                ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+                : const EdgeInsets.fromLTRB(10, 18, 10, 14),
+            child: useHorizontalLayout
+                ? Row(
+                    children: [
+                      Text(
+                        department.icon,
+                        style: const TextStyle(fontSize: 27),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: _DepartmentCardText(
+                          department: department,
+                          selected: selected,
+                          textAlign: TextAlign.left,
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        department.icon,
+                        style: const TextStyle(fontSize: 25),
+                      ),
+                      const SizedBox(height: 5),
+                      _DepartmentCardText(
+                        department: department,
+                        selected: selected,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  department.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF52606D),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DepartmentCardText extends StatelessWidget {
+  const _DepartmentCardText({
+    required this.department,
+    required this.selected,
+    required this.textAlign,
+  });
+
+  final DepartmentPreset department;
+  final bool selected;
+  final TextAlign textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: textAlign == TextAlign.left
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
+      children: [
+        Text(
+          department.label,
+          textAlign: textAlign,
+          style: TextStyle(
+            fontSize: 20,
+            height: 1.05,
+            fontWeight: FontWeight.w900,
+            color: selected ? const Color(0xFF0F6784) : snoobiInk,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          department.description,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: textAlign,
+          style: const TextStyle(
+            fontSize: 11.5,
+            height: 1.15,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF52606D),
+          ),
+        ),
+      ],
     );
   }
 }
