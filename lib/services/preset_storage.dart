@@ -9,19 +9,58 @@ import 'pump_calculator.dart';
 Map<String, List<DrugPreset>> migratePresetMap({
   String? currentRaw,
   String? legacyRaw,
+  bool addMissingMicuPropofol1g50Ml = false,
 }) {
   final current = _decodePresetSource(currentRaw);
   final legacy = _decodePresetSource(legacyRaw);
   final merged = <String, List<DrugPreset>>{};
 
   for (final department in preset_data.defaultDepartments) {
-    merged[department.id] =
+    var presets =
         _decodeDepartmentPresets(current?[department.id], department.id) ??
             _decodeDepartmentPresets(legacy?[department.id], department.id) ??
             department.presets.map((preset) => preset.copy()).toList();
+    if (department.id == 'micu' && addMissingMicuPropofol1g50Ml) {
+      presets = _addMissingMicuPropofol1g50Ml(presets);
+    }
+    merged[department.id] = presets;
   }
 
   return merged;
+}
+
+List<DrugPreset> _addMissingMicuPropofol1g50Ml(List<DrugPreset> presets) {
+  if (presets.any(_isMicuPropofol1g50Ml)) {
+    return presets;
+  }
+
+  return [
+    ...presets,
+    preset_data.buildMicuPropofol1g50MlPreset(),
+  ];
+}
+
+bool _isMicuPropofol1g50Ml(DrugPreset preset) {
+  if (!preset.name.trim().toLowerCase().contains('propofol') ||
+      preset.volumeMl != 50 ||
+      preset.doseUnit.trim().toLowerCase().replaceAll(' ', '') !=
+          'mcg/kg/min' ||
+      preset.timeUnit != 'min' ||
+      !preset.useWeight) {
+    return false;
+  }
+
+  final amountUnit = parseDrugAmountUnit(preset.drugUnit);
+  if (amountUnit == null ||
+      !canConvertAmountUnits(amountUnit, DoseAmountUnit.mcg)) {
+    return false;
+  }
+  final amountInMcg = convertDrugAmountToDoseUnit(
+    amount: preset.drugAmount,
+    from: amountUnit,
+    to: DoseAmountUnit.mcg,
+  );
+  return (amountInMcg - 1000000).abs() < 0.000001;
 }
 
 Map<String, dynamic>? _decodePresetSource(String? raw) {

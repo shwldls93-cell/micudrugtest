@@ -13,9 +13,12 @@ import 'widgets/pump_calculator/landing_section.dart';
 import 'widgets/pump_calculator/layout_constants.dart';
 import 'widgets/pump_calculator/shared_widgets.dart';
 
-const storageKey = 'icu_infusion_presets_by_department_v2';
+const storageKey = 'icu_infusion_presets_by_department_v3';
 const selectedDepartmentKey = 'icu_selected_department_v2';
-const legacyStorageKeys = ['icu_infusion_presets_by_department_v1'];
+const legacyStorageKeys = [
+  'icu_infusion_presets_by_department_v2',
+  'icu_infusion_presets_by_department_v1',
+];
 const legacySelectedDepartmentKeys = ['icu_selected_department_v1'];
 
 void main() {
@@ -114,6 +117,8 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
 
   Future<void> _loadState() async {
     final prefs = await SharedPreferences.getInstance();
+    final currentRaw = prefs.getString(storageKey);
+    final legacyRaw = readFirstLegacyString(prefs, legacyStorageKeys);
     final savedDepartment = readFirstAvailableString(
       prefs,
       selectedDepartmentKey,
@@ -122,8 +127,10 @@ class _PumpCalculatorPageState extends State<PumpCalculatorPage> {
     );
 
     final mergedMap = migratePresetMap(
-      currentRaw: prefs.getString(storageKey),
-      legacyRaw: readFirstLegacyString(prefs, legacyStorageKeys),
+      currentRaw: currentRaw,
+      legacyRaw: legacyRaw,
+      addMissingMicuPropofol1g50Ml:
+          currentRaw == null || currentRaw.trim().isEmpty,
     );
 
     if (!mounted) return;

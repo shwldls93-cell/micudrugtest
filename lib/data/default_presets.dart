@@ -63,6 +63,7 @@ bool shouldReplaceLegacyMicuPresets(List<DrugPreset> presets) {
     'precedex(dexmedetomidine)',
     'remifentanil 1mg',
     'propofol 400mg',
+    'propofol 1g/50ml',
     'sufentanil 50mcg',
     'rocuronium 50mg',
     'ketamine 250mg',
@@ -230,6 +231,23 @@ DrugPreset buildMicuKetaminePreset({String? id}) {
     maxDose: 4,
     note:
         'Mix 500 mg + 5DW 250 mL\n1 vial 250 mg 기준 / 총량 500 mg\nmin 0.2, max 4',
+  );
+}
+
+DrugPreset buildMicuPropofol1g50MlPreset({String? id}) {
+  return buildDrugPreset(
+    id: id,
+    name: 'propofol 1g/50mL',
+    doseUnit: 'mcg/kg/min',
+    drugAmount: 1,
+    drugUnit: 'g',
+    volumeMl: 50,
+    timeUnit: 'min',
+    useWeight: true,
+    minDose: 10,
+    maxDose: 40,
+    note:
+        '원액사용 / 총량 1 g / 계산용 총부피 50 mL\nmin 10, max 40, 단독 route 사용, 12hr line change, 원액사용',
   );
 }
 
@@ -720,6 +738,7 @@ List<DrugPreset> defaultMicuPresets() {
       note:
           '원액사용 / 총량 400 mg (200 mg vial × 2) / 계산용 총부피 40 mL\nmin 10, max 40, 단독 route 사용, 12hr line change, 원액사용',
     ),
+    buildMicuPropofol1g50MlPreset(),
     buildDrugPreset(
       name: 'sufentanil 50mcg',
       doseUnit: 'mcg/kg/hr',
