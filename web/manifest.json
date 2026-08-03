@@ -1,9 +1,0 @@
-{
-  "name": "스누비 쫀득 계산기",
-  "short_name": "쫀득 계산기",
-  "start_url": ".",
-  "display": "standalone",
-  "background_color": "#BFE5FF",
-  "theme_color": "#BFE5FF",
-  "description": "중환자실 약물 주입 속도 계산기"
-}
